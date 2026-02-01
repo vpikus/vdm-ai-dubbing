@@ -1,0 +1,73 @@
+version: '3.8'
+
+# Test environment Docker Compose
+# Usage: docker-compose -f docker-compose.test.yml up --build
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: vdm-test-redis
+    command: redis-server --appendonly yes --requirepass testpass
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "testpass", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - vdm-test-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: vdm-test-gateway
+    environment:
+      - NODE_ENV=test
+      - PORT=3000
+      - REDIS_URL=redis://:testpass@redis:6379
+      - DB_PATH=/app/data/test.sqlite
+      - MEDIA_ROOT=/app/media
+      - JWT_SECRET=test-secret-key
+      - LOG_LEVEL=debug
+    volumes:
+      - test_db_data:/app/data
+      - test_media_data:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - vdm-test-network
+
+  # E2E test runner
+  e2e:
+    image: node:20-alpine
+    container_name: vdm-test-e2e
+    working_dir: /app
+    volumes:
+      - ./e2e:/app
+      - /app/node_modules
+    depends_on:
+      gateway:
+        condition: service_healthy
+    environment:
+      - API_URL=http://gateway:3000
+    command: sh -c "npm install && npm test"
+    networks:
+      - vdm-test-network
+
+volumes:
+  test_db_data:
+  test_media_data:
+
+networks:
+  vdm-test-network:
+    driver: bridge

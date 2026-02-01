@@ -2,14 +2,14 @@
 
 ## Overview
 - **Name**: Web UI Component
-- **Description**: Browser-based user interface providing Transmission-like queue management for video downloads and dubbing
+- **Description**: Browser-based user interface providing queue management for video downloads and dubbing
 - **Type**: Web Application (Single Page Application)
 - **Technology**: TypeScript, React 18, Ant Design, Zustand, Socket.IO Client
 
 ## Purpose
-The Web UI Component provides a user-friendly, Transmission-like interface for managing video download and dubbing jobs. It enables users to add video URLs from YouTube and yt-dlp-supported services, monitor download progress in real-time, control job execution (cancel/retry/resume), and view detailed logs. The component communicates with the Gateway via REST API for control operations and WebSocket for live progress updates and notifications.
+The Web UI Component provides a user-friendly interface for managing video download and dubbing jobs. It enables users to add video URLs from YouTube and yt-dlp-supported services, monitor download progress in real-time, control job execution (cancel/retry/resume), and view detailed logs. The component communicates with the Gateway via REST API for control operations and WebSocket for live progress updates and notifications.
 
-This component solves the problem of providing an accessible, browser-based interface for job management without requiring desktop application installation. It emphasizes a queue-centric UX similar to Transmission, making it familiar and intuitive for users experienced with torrent clients.
+This component solves the problem of providing an accessible, browser-based interface for job management without requiring desktop application installation. It emphasizes a queue-centric UX for intuitive job management.
 
 ## Software Features
 - **Job Submission**: Add video URLs with configurable options (format, resolution, dubbing toggle, target language, cookies)

@@ -1,6 +1,6 @@
 # Video Download Manager
 
-A Transmission-like video download manager with optional AI dubbing support. Built with a microservices architecture using Docker containers.
+A queue-based video download manager with optional AI dubbing support. Built with a microservices architecture using Docker containers.
 
 ## Features
 
@@ -41,7 +41,7 @@ QUEUED → DOWNLOADING → DOWNLOADED → [DUBBING → DUBBED] → MUXING → CO
 1. Clone the repository
 2. Copy environment file:
    ```bash
-   cp C4-Documentation/.env.example .env
+   cp .env.example .env
    ```
 3. Edit `.env` and set secure values for:
    - `REDIS_PASSWORD`

@@ -1,7 +1,7 @@
 {
   "name": "vdm-web-ui",
   "version": "1.0.0",
-  "description": "Web UI for Video Download Manager - Transmission-like queue interface",
+  "description": "Web UI for Video Download Manager - Queue-based download interface",
   "type": "module",
   "scripts": {
     "dev": "vite",

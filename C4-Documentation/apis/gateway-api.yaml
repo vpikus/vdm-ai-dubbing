@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: YT-DLP Downloader Gateway API
   description: |
-    REST API for the Transmission-like YT-DLP Downloader with Optional Dubbing system.
+    REST API for the Video Download Manager with Optional Dubbing system.
 
     This API provides job management, control operations, and monitoring for video download and dubbing workflows.
     Real-time updates are available via WebSocket (Socket.IO) at `/api/ws`.

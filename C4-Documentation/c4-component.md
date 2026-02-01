@@ -2,11 +2,11 @@
 
 ## System Components
 
-This document provides a comprehensive overview of all components in the **Transmission-like YT-DLP Downloader with Optional Dubbing** system. Each component represents a logical grouping of functionality with well-defined responsibilities, interfaces, and dependencies.
+This document provides a comprehensive overview of all components in the **Video Download Manager with Optional Dubbing** system. Each component represents a logical grouping of functionality with well-defined responsibilities, interfaces, and dependencies.
 
 ### 1. Web UI Component
 - **Name**: Web UI
-- **Description**: Browser-based user interface providing Transmission-like queue management for video downloads and dubbing
+- **Description**: Browser-based user interface providing queue management for video downloads and dubbing
 - **Type**: Web Application (SPA)
 - **Technology**: TypeScript, React 18, Ant Design, Zustand, Socket.IO client
 - **Documentation**: [c4-component-web-ui.md](./c4-component-web-ui.md)
@@ -251,7 +251,7 @@ QUEUED → DOWNLOADING → DOWNLOADED → [DUBBING → DUBBED →] MUXING → CO
 
 - **Download Worker**: Concurrency 1 (single-threaded, strict FIFO)
   - Ensures sequential downloads to prevent bandwidth saturation and rate limiting
-  - Mimics Transmission behavior
+  - Ensures sequential downloads to prevent bandwidth saturation
 - **Dubbing Worker**: Concurrency 2-4 (configurable)
   - Parallelizes API calls to Yandex VOT
   - Limited by API rate limits and quotas

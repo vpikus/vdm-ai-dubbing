@@ -1,6 +1,6 @@
 # C4 Architecture Documentation
 
-This directory contains comprehensive C4 model architecture documentation for the **Transmission-like YT-DLP Downloader with Optional Dubbing** system.
+This directory contains comprehensive C4 model architecture documentation for the **Video Download Manager with Optional Dubbing** system.
 
 ## Documentation Structure
 
@@ -34,7 +34,7 @@ Component-level documentation describes the logical components within the system
 
 1. **[c4-component-web-ui.md](./c4-component-web-ui.md)** - Web UI Component
    - TypeScript single-page application (React 18, Ant Design, Zustand)
-   - Transmission-like queue interface with dark theme
+   - Queue-based interface with dark theme
    - REST API client (Fetch) and WebSocket client (Socket.IO)
    - Real-time progress monitoring, job control, and toast notifications
 

@@ -1,6 +1,6 @@
 # Implementation Plan: Video Download Manager
 
-This document provides a phased implementation plan for the **Transmission-like YT-DLP Downloader with Optional Dubbing** system based on the C4 architecture documentation.
+This document provides a phased implementation plan for the **Video Download Manager with Optional Dubbing** system based on the C4 architecture documentation.
 
 ## Executive Summary
 
@@ -363,7 +363,7 @@ muxer/
 
 ### Phase 6: Web UI
 
-**Objective**: Implement the Transmission-like browser interface.
+**Objective**: Implement the browser interface.
 
 #### 6.1 Project Setup
 - [ ] Initialize React or Vue project with TypeScript
@@ -441,7 +441,7 @@ web-ui/
 - [ ] Sound alerts (optional)
 
 **Deliverables**:
-- Complete Web UI with Transmission-like UX
+- Complete Web UI with queue-based UX
 - Real-time updates via WebSocket
 - Job management (CRUD, control)
 - Docker image (or static files served by Gateway)

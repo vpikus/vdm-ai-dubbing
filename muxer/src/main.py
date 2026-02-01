@@ -1,6 +1,7 @@
 """Main entry point for Muxing Worker."""
 
 import json
+import re
 import shutil
 import signal
 import sys
@@ -35,6 +36,12 @@ structlog.configure(
 
 logger = structlog.get_logger("muxer")
 
+
+def redact_redis_url(url: str) -> str:
+    """Redact password from Redis URL for safe logging."""
+    return re.sub(r"(redis://[^:]*:)[^@]+(@)", r"\1***\2", url)
+
+
 # Global shutdown flag
 shutdown_requested = False
 
@@ -52,7 +59,7 @@ def parse_job_data(data: dict[str, Any]) -> MuxJobData:
         job_id=data["jobId"],
         video_path=data["videoPath"],
         audio_dubbed_path=data["audioDubbedPath"],
-        target_lang=data.get("targetLang", config.default_container),
+        target_lang=data.get("targetLang", "ru"),  # Default to Russian (primary dubbing language)
         output_container=data.get("outputContainer", config.default_container),
         ducking_level=data.get("duckingLevel", config.ducking_level),
         normalization_lufs=data.get("normalizationLufs", config.normalization_lufs),
@@ -169,7 +176,7 @@ def main() -> None:
     """Main entry point."""
     logger.info(
         "Starting Muxing Worker",
-        redis_url=config.redis_url,
+        redis_url=redact_redis_url(config.redis_url),
         media_root=config.media_root,
         concurrency=config.concurrency,
     )

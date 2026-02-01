@@ -1,7 +1,9 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
+import jwt from 'jsonwebtoken';
 import { subscribeToAllEvents } from '../queue/client.js';
 import { updateJobStatus, logJobEvent, updateMedia } from '../db/jobs.js';
+import { config } from '../config.js';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -18,6 +20,8 @@ let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents> | null = null
 // Track which sockets are subscribed to which jobs
 const socketJobSubscriptions = new Map<string, Set<string>>();
 const jobSocketSubscriptions = new Map<string, Set<string>>();
+// Track authenticated sockets
+const authenticatedSockets = new Set<string>();
 
 export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
   io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
@@ -36,8 +40,19 @@ export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
     // Initialize subscription tracking
     socketJobSubscriptions.set(socket.id, new Set());
 
-    // Handle subscribe to job updates
+    // Handle subscribe to job updates (requires authentication)
     socket.on('subscribe', (jobIds: string[]) => {
+      // Require authentication before allowing subscriptions
+      if (!authenticatedSockets.has(socket.id)) {
+        socket.emit('error', {
+          jobId: '',
+          type: 'error',
+          timestamp: new Date().toISOString(),
+          payload: { code: 'AUTH_REQUIRED', message: 'Authentication required', retryable: false },
+        });
+        return;
+      }
+
       const socketJobs = socketJobSubscriptions.get(socket.id);
       if (!socketJobs) return;
 
@@ -78,17 +93,24 @@ export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
       console.log(`Socket ${socket.id} unsubscribed from jobs:`, jobIds);
     });
 
-    // Handle authentication (for future use)
-    socket.on('authenticate', (_token: string) => {
-      // TODO: Verify JWT token
-      socket.emit('authenticated', { success: true });
+    // Handle authentication
+    socket.on('authenticate', (token: string) => {
+      try {
+        jwt.verify(token, config.jwtSecret);
+        authenticatedSockets.add(socket.id);
+        socket.emit('authenticated', { success: true });
+        console.log(`Socket ${socket.id} authenticated`);
+      } catch {
+        socket.emit('authenticated', { success: false });
+        console.log(`Socket ${socket.id} authentication failed`);
+      }
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
 
-      // Clean up subscriptions
+      // Clean up subscriptions and authentication
       const socketJobs = socketJobSubscriptions.get(socket.id);
       if (socketJobs) {
         for (const jobId of socketJobs) {
@@ -102,6 +124,7 @@ export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
         }
         socketJobSubscriptions.delete(socket.id);
       }
+      authenticatedSockets.delete(socket.id);
     });
   });
 

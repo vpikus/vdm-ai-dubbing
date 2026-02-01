@@ -22,10 +22,10 @@ const configSchema = z.object({
   alertFreeSpaceGb: z.coerce.number().default(20),
 
   // Auth
-  jwtSecret: z.string().min(32),
+  jwtSecret: z.string().min(1),
   jwtExpiresIn: z.string().default('7d'),
-  adminUsername: z.string().default('admin'),
-  adminPassword: z.string().default('changeme'),
+  adminUsername: z.string().min(1),
+  adminPassword: z.string().min(1),
 
   // Queue concurrency
   downloadConcurrency: z.coerce.number().default(1),

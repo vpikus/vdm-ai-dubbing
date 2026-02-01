@@ -20,6 +20,7 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": false,
     "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
     }

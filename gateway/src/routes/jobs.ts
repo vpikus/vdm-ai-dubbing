@@ -19,6 +19,30 @@ import { join } from 'path';
 import type { JobStatus, CreateJobRequest, Job, Media } from '../../types/index.js';
 
 // =============================================================================
+// FILENAME SANITIZATION
+// =============================================================================
+
+/**
+ * Sanitize a string for use in a filename.
+ * Removes path separators, null bytes, and other dangerous characters.
+ */
+function sanitizeFilename(input: string): string {
+  return input
+    // Remove null bytes
+    .replace(/\0/g, '')
+    // Remove path separators
+    .replace(/[/\\]/g, '_')
+    // Remove other problematic characters
+    .replace(/[<>:"|?*]/g, '_')
+    // Remove control characters
+    .replace(/[\x00-\x1f\x7f]/g, '')
+    // Trim whitespace
+    .trim()
+    // Limit length to prevent filesystem issues
+    .slice(0, 200);
+}
+
+// =============================================================================
 // CLEANUP UTILITIES
 // =============================================================================
 
@@ -511,10 +535,12 @@ export async function jobRoutes(fastify: FastifyInstance): Promise<void> {
           logJobEvent(id, 'retry', { previousStatus: job.status, resumeFrom: 'muxing' });
           logJobEvent(id, 'state_change', { from: job.status, to: 'DUBBED' });
 
+          const safeTitle = sanitizeFilename(media.sourceTitle || job.id);
+          const safeId = sanitizeFilename(media.sourceId || job.id);
           const finalPath = join(
             config.mediaRoot,
             'complete',
-            `${media.sourceTitle || job.id} [${media.sourceId || job.id}].${job.outputContainer}`
+            `${safeTitle} [${safeId}].${job.outputContainer}`
           );
 
           await enqueueMux(
@@ -541,10 +567,12 @@ export async function jobRoutes(fastify: FastifyInstance): Promise<void> {
           logJobEvent(id, 'retry', { previousStatus: job.status, resumeFrom: 'dubbing' });
           logJobEvent(id, 'state_change', { from: job.status, to: 'DOWNLOADED' });
 
+          const safeTitle = sanitizeFilename(media!.sourceTitle || job.id);
+          const safeId = sanitizeFilename(media!.sourceId || job.id);
           const finalPath = join(
             config.mediaRoot,
             'complete',
-            `${media!.sourceTitle || job.id} [${media!.sourceId || job.id}].${job.outputContainer}`
+            `${safeTitle} [${safeId}].${job.outputContainer}`
           );
 
           await enqueueDub(

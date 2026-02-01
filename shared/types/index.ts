@@ -117,7 +117,11 @@ export interface Media {
 // EVENT TYPES
 // =============================================================================
 
-/** Event types for job_events table */
+/**
+ * Event types for Pub/Sub messages.
+ * Note: 'metadata' is used only for Pub/Sub, not stored in job_events table.
+ * DB-stored event types: progress, state_change, log, error, started, finished, retry
+ */
 export type EventType =
   | 'progress'
   | 'state_change'

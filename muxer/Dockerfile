@@ -27,7 +27,7 @@ USER worker
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import redis; r = redis.Redis.from_url('${REDIS_URL:-redis://localhost:6379}'); r.ping()" || exit 1
+    CMD python -c "import os; import redis; r = redis.Redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379')); r.ping()" || exit 1
 
 # Run worker
 CMD ["python", "-m", "src.main"]

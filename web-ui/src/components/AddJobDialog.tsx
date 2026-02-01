@@ -189,7 +189,7 @@ export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {
                 >
                   <Input.TextArea
                     rows={4}
-                    placeholder="# Netscape HTTP Cookie File&#10;.youtube.com&#9;TRUE&#9;/&#9;FALSE&#9;0&#9;cookie_name&#9;cookie_value"
+                    placeholder={"# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tFALSE\t0\tcookie_name\tcookie_value"}
                     style={{ fontFamily: 'monospace', fontSize: 12 }}
                   />
                 </Form.Item>

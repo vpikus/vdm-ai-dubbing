@@ -10,6 +10,8 @@ export default defineConfig({
       REDIS_URL: 'redis://localhost:6379',
       JWT_SECRET: 'test-secret-for-vitest-minimum-32-chars',
       MEDIA_ROOT: '/tmp/vdm-test',
+      ADMIN_USERNAME: 'testadmin',
+      ADMIN_PASSWORD: 'testpassword123',
     },
     include: ['src/**/*.test.ts'],
     coverage: {

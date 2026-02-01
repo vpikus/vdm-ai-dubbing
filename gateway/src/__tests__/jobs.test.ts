@@ -2,10 +2,10 @@
  * Jobs API Tests
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify from 'fastify';
 import { jobRoutes } from '../routes/jobs';
-import { getDatabase } from '../db/database';
+import { getDatabase, closeDatabase } from '../db/database';
 import * as jobsDb from '../db/jobs';
 
 describe('Jobs API', () => {
@@ -23,6 +23,11 @@ describe('Jobs API', () => {
     // Register routes
     await app.register(jobRoutes, { prefix: '/api' });
     await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    closeDatabase();
   });
 
   describe('POST /api/jobs', () => {
@@ -89,9 +94,10 @@ describe('Jobs API', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      const jobs = response.json();
-      expect(Array.isArray(jobs)).toBe(true);
-      expect(jobs.length).toBeGreaterThan(0);
+      const result = response.json();
+      expect(result).toHaveProperty('jobs');
+      expect(Array.isArray(result.jobs)).toBe(true);
+      expect(result.jobs.length).toBeGreaterThan(0);
     });
 
     it('should filter by status', async () => {
@@ -101,8 +107,8 @@ describe('Jobs API', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      const jobs = response.json();
-      jobs.forEach((job: { status: string }) => {
+      const result = response.json();
+      result.jobs.forEach((job: { status: string }) => {
         expect(job.status).toBe('QUEUED');
       });
     });
@@ -193,6 +199,193 @@ describe('Jobs API', () => {
         url: `/api/jobs/${job.id}`,
       });
       expect(getResponse.statusCode).toBe(404);
+    });
+  });
+
+  describe('POST /api/jobs/:id/retry', () => {
+    it('should retry a failed job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-retry-1',
+        requestedDubbing: false,
+        targetLang: 'en',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Set job to FAILED state
+      await jobsDb.updateJobStatus(job.id, 'FAILED', 'Test failure');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/retry`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const result = response.json();
+      expect(result.status).toBe('QUEUED');
+    });
+
+    it('should retry a canceled job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-retry-2',
+        requestedDubbing: false,
+        targetLang: 'en',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Set job to CANCELED state
+      await jobsDb.updateJobStatus(job.id, 'CANCELED');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/retry`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const result = response.json();
+      expect(result.status).toBe('QUEUED');
+    });
+
+    it('should reject retry for queued job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-retry-3',
+        requestedDubbing: false,
+        targetLang: 'en',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Job is already QUEUED
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/retry`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      const result = response.json();
+      expect(result.code).toBe('INVALID_STATE');
+    });
+
+    it('should reject retry for completed job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-retry-4',
+        requestedDubbing: false,
+        targetLang: 'en',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Set job to COMPLETE state
+      await jobsDb.updateJobStatus(job.id, 'COMPLETE');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/retry`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      const result = response.json();
+      expect(result.code).toBe('INVALID_STATE');
+    });
+
+    it('should return 404 for non-existent job', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/jobs/non-existent-id/retry',
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('POST /api/jobs/:id/resume', () => {
+    it('should reject resume for non-failed job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-resume-1',
+        requestedDubbing: true,
+        targetLang: 'ru',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Job is QUEUED, not FAILED
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/resume`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      const result = response.json();
+      expect(result.code).toBe('INVALID_STATE');
+    });
+
+    it('should reject resume when no stage completed', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-resume-2',
+        requestedDubbing: true,
+        targetLang: 'ru',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // Set to FAILED without any completed stages
+      await jobsDb.updateJobStatus(job.id, 'FAILED', 'Download failed');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/resume`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      const result = response.json();
+      expect(result.code).toBe('CANNOT_RESUME');
+      expect(result.details).toHaveProperty('downloadCompleted', false);
+    });
+
+    it('should return 404 for non-existent job', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/jobs/non-existent-id/resume',
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should reject resume for canceled job', async () => {
+      const job = await jobsDb.createJob({
+        url: 'https://example.com/video-resume-3',
+        requestedDubbing: true,
+        targetLang: 'ru',
+        formatPreset: 'bestvideo+bestaudio',
+        outputContainer: 'mkv',
+        downloadSubtitles: false,
+        priority: 0,
+      });
+
+      // CANCELED is not FAILED
+      await jobsDb.updateJobStatus(job.id, 'CANCELED');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/jobs/${job.id}/resume`,
+      });
+
+      expect(response.statusCode).toBe(400);
+      const result = response.json();
+      expect(result.code).toBe('INVALID_STATE');
     });
   });
 });

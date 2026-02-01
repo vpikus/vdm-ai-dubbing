@@ -20,7 +20,6 @@ class Config:
 
     # Worker settings
     concurrency: int = int(os.getenv("MUXING_CONCURRENCY", "1"))
-    max_retries: int = int(os.getenv("MAX_RETRIES", "3"))
 
     # Audio mixing settings
     default_container: str = os.getenv("DEFAULT_CONTAINER", "mkv")

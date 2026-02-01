@@ -2,11 +2,11 @@
  * Auth API Tests
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import { authRoutes } from '../routes/auth';
-import { getDatabase } from '../db/database';
+import { getDatabase, closeDatabase } from '../db/database';
 import * as usersDb from '../db/users';
 
 describe('Auth API', () => {
@@ -32,6 +32,11 @@ describe('Auth API', () => {
     // Register routes
     await app.register(authRoutes, { prefix: '/api' });
     await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    closeDatabase();
   });
 
   describe('POST /api/auth/login', () => {

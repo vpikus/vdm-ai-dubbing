@@ -58,7 +58,7 @@ export const useJobStore = create<JobState>((set) => ({
       set({ selectedJob: job, loading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch job';
-      set({ loading: false });
+      set({ error: message, loading: false });
       showError('Failed to load job details', message);
     }
   },

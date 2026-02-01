@@ -49,9 +49,9 @@ USER nodejs
 # Expose port for health check (optional)
 EXPOSE 8002
 
-# Health check
+# Health check (using dynamic import for ES modules)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "const r = require('ioredis'); new r(process.env.REDIS_URL).ping().then(() => process.exit(0)).catch(() => process.exit(1))"
+    CMD node --input-type=module -e "const Redis = (await import('ioredis')).default; await new Redis(process.env.REDIS_URL).ping();"
 
 # Run worker
 CMD ["node", "dist/main.js"]

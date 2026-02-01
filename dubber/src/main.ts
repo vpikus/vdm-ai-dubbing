@@ -49,13 +49,7 @@ const worker = new Worker<DubJobData>(
       const error = err as Error;
       console.error(`Dubbing job ${jobId} failed:`, error);
 
-      await publishError(
-        jobId,
-        'DUBBING_FAILED',
-        error.message,
-        false,
-        error.stack
-      );
+      await publishError(jobId, 'DUBBING_FAILED', error.message, false, error.stack);
 
       await publishStateChange(jobId, 'DUBBING', 'FAILED');
 

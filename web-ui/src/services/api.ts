@@ -2,13 +2,7 @@
  * REST API Client for Gateway Service
  */
 
-import type {
-  Job,
-  JobDetail,
-  CreateJobRequest,
-  LoginRequest,
-  LoginResponse,
-} from '../types';
+import type { Job, JobDetail, CreateJobRequest, LoginRequest, LoginResponse } from '../types';
 import { useAuthStore } from '../store/authStore';
 
 const API_BASE = '/api';
@@ -23,10 +17,7 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('vdm-auth')
     ? JSON.parse(localStorage.getItem('vdm-auth')!).state?.token
     : null;

@@ -109,7 +109,10 @@ async function buildServer() {
 
   fastify.decorate(
     'authenticate',
-    async function (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) {
+    async function (
+      request: import('fastify').FastifyRequest,
+      reply: import('fastify').FastifyReply
+    ) {
       try {
         await request.jwtVerify();
 
@@ -121,7 +124,7 @@ async function buildServer() {
             code: 'SESSION_EXPIRED',
           });
         }
-      } catch (err) {
+      } catch {
         return reply.status(401).send({
           error: 'Unauthorized',
           code: 'UNAUTHORIZED',

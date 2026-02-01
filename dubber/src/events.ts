@@ -92,11 +92,7 @@ export async function publishStateChange(
   });
 }
 
-export async function publishLog(
-  jobId: string,
-  level: string,
-  message: string
-): Promise<void> {
+export async function publishLog(jobId: string, level: string, message: string): Promise<void> {
   await publishEvent('events:log', {
     jobId,
     type: 'log',

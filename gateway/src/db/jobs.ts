@@ -211,10 +211,19 @@ export function listJobs(options: {
 export function updateJobStatus(id: string, status: JobStatus, error?: string): void {
   if (error) {
     // Set error when provided (typically for FAILED status)
-    runQuery('UPDATE jobs SET status = ?, error = ?, updated_at = ? WHERE id = ?', [status, error, new Date().toISOString(), id]);
+    runQuery('UPDATE jobs SET status = ?, error = ?, updated_at = ? WHERE id = ?', [
+      status,
+      error,
+      new Date().toISOString(),
+      id,
+    ]);
   } else {
     // Clear error when transitioning to any non-error state (retry, resume, or completion)
-    runQuery('UPDATE jobs SET status = ?, error = NULL, updated_at = ? WHERE id = ?', [status, new Date().toISOString(), id]);
+    runQuery('UPDATE jobs SET status = ?, error = NULL, updated_at = ? WHERE id = ?', [
+      status,
+      new Date().toISOString(),
+      id,
+    ]);
   }
 }
 
@@ -242,10 +251,7 @@ export function getMediaByJobId(jobId: string): Media | undefined {
   return row ? mapMediaRow(row) : undefined;
 }
 
-export function updateMedia(
-  jobId: string,
-  updates: Partial<Omit<Media, 'id' | 'jobId'>>
-): void {
+export function updateMedia(jobId: string, updates: Partial<Omit<Media, 'id' | 'jobId'>>): void {
   const db = getDatabase();
 
   const columns: string[] = [];

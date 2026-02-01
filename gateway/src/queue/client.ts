@@ -242,10 +242,7 @@ type EventHandler = (message: EventMessage) => void;
 
 const eventHandlers: Map<EventChannel, Set<EventHandler>> = new Map();
 
-export function subscribeToEvents(
-  channel: EventChannel,
-  handler: EventHandler
-): () => void {
+export function subscribeToEvents(channel: EventChannel, handler: EventHandler): () => void {
   if (!eventHandlers.has(channel)) {
     eventHandlers.set(channel, new Set());
 
@@ -283,10 +280,7 @@ export function subscribeToAllEvents(handler: EventHandler): () => void {
   };
 }
 
-export async function publishEvent(
-  channel: EventChannel,
-  message: EventMessage
-): Promise<void> {
+export async function publishEvent(channel: EventChannel, message: EventMessage): Promise<void> {
   await getRedisClient().publish(channel, JSON.stringify(message));
 }
 

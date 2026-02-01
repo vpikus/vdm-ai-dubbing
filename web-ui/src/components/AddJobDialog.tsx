@@ -109,14 +109,7 @@ export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {
           useLivelyVoice: false,
         }}
       >
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
+        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
         <Form.Item
           label="Video URL"
@@ -183,7 +176,9 @@ export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {
                 >
                   <Input.TextArea
                     rows={4}
-                    placeholder={"# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tFALSE\t0\tcookie_name\tcookie_value"}
+                    placeholder={
+                      '# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tFALSE\t0\tcookie_name\tcookie_value'
+                    }
                     style={{ fontFamily: 'monospace', fontSize: 12 }}
                   />
                 </Form.Item>

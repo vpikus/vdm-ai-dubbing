@@ -40,17 +40,8 @@ const stageColors: Record<string, string> = {
   default: '#6366f1',
 };
 
-export function ProgressBar({
-  percent,
-  stage,
-  speed,
-  eta,
-  showLabel = true,
-}: ProgressBarProps) {
-  const clampedPercent = useMemo(
-    () => Math.min(100, Math.max(0, percent)),
-    [percent]
-  );
+export function ProgressBar({ percent, stage, speed, eta, showLabel = true }: ProgressBarProps) {
+  const clampedPercent = useMemo(() => Math.min(100, Math.max(0, percent)), [percent]);
 
   const strokeColor = stageColors[stage || 'default'] || stageColors.default;
 

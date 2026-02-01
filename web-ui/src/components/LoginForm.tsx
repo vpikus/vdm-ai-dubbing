@@ -24,11 +24,7 @@ export function LoginForm() {
       const response = await api.login(values);
       login(response.token, response.user);
     } catch (err) {
-      setError(
-        err instanceof api.ApiError
-          ? err.message
-          : 'Failed to login. Please try again.'
-      );
+      setError(err instanceof api.ApiError ? err.message : 'Failed to login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -45,14 +41,8 @@ export function LoginForm() {
       }}
     >
       <div style={{ width: '100%', maxWidth: 400, padding: '0 16px' }}>
-        <Space
-          direction="vertical"
-          align="center"
-          style={{ width: '100%', marginBottom: 32 }}
-        >
-          <CloudDownloadOutlined
-            style={{ fontSize: 64, color: '#6366f1' }}
-          />
+        <Space direction="vertical" align="center" style={{ width: '100%', marginBottom: 32 }}>
+          <CloudDownloadOutlined style={{ fontSize: 64, color: '#6366f1' }} />
           <Title level={2} style={{ margin: 0 }}>
             Video Download Manager
           </Title>
@@ -60,19 +50,8 @@ export function LoginForm() {
         </Space>
 
         <Card>
-          <Form
-            layout="vertical"
-            onFinish={handleSubmit}
-            autoComplete="off"
-          >
-            {error && (
-              <Alert
-                message={error}
-                type="error"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-            )}
+          <Form layout="vertical" onFinish={handleSubmit} autoComplete="off">
+            {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
             <Form.Item
               label="Username"
@@ -91,18 +70,12 @@ export function LoginForm() {
             </Form.Item>
 
             <Form.Item style={{ marginBottom: 0 }}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                block
-              >
+              <Button type="primary" htmlType="submit" loading={loading} block>
                 Sign In
               </Button>
             </Form.Item>
           </Form>
         </Card>
-
       </div>
     </div>
   );

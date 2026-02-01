@@ -5,6 +5,7 @@ import re
 import shutil
 import signal
 import sys
+import threading
 import time
 import traceback
 from pathlib import Path
@@ -43,15 +44,14 @@ def redact_redis_url(url: str) -> str:
     return re.sub(r"(rediss?://[^:]*:)[^@]+(@)", r"\1***\2", url)
 
 
-# Global shutdown flag
-shutdown_requested = False
+# Thread-safe shutdown event
+shutdown_event = threading.Event()
 
 
-def signal_handler(signum: int, frame: Any) -> None:
+def signal_handler(signum: int, _frame: Any) -> None:
     """Handle shutdown signals."""
-    global shutdown_requested
     logger.info("Shutdown signal received", signal=signum)
-    shutdown_requested = True
+    shutdown_event.set()
 
 
 def parse_job_data(data: dict[str, Any]) -> MuxJobData:
@@ -102,9 +102,7 @@ def process_job(
 
         # Update state to COMPLETE
         event_publisher.publish_state_change(job.job_id, "MUXING", "COMPLETE")
-        event_publisher.publish_log(
-            job.job_id, "info", f"Processing complete: {output_path}"
-        )
+        event_publisher.publish_log(job.job_id, "info", f"Processing complete: {output_path}")
 
         # Clean up temp directory
         cleanup_temp_dir(job.temp_dir)
@@ -147,15 +145,15 @@ def consume_jobs(
 
     logger.info("Starting job consumer", queue=queue_key)
 
-    while not shutdown_requested:
+    while not shutdown_event.is_set():
         try:
             # Block for 5 seconds waiting for a job
-            result = redis_client.blpop(queue_key, timeout=5)
+            result = redis_client.blpop([queue_key], timeout=5)
 
             if result is None:
                 continue
 
-            _, job_json = result
+            _, job_json = result  # type: ignore[misc]
             job_data = json.loads(job_json)
 
             try:

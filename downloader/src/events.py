@@ -60,9 +60,7 @@ class EventPublisher:
         message = EventMessage.create(job_id, "progress", payload)
         self.publish("events:progress", message)
 
-    def publish_state_change(
-        self, job_id: str, from_status: str, to_status: str
-    ) -> None:
+    def publish_state_change(self, job_id: str, from_status: str, to_status: str) -> None:
         """Publish a state change event."""
         payload = {
             "from": from_status,
@@ -109,7 +107,7 @@ class EventPublisher:
         source_upload_date: str | None = None,
         source_description: str | None = None,
         source_thumbnail_url: str | None = None,
-        duration_sec: int | None = None,
+        duration_sec: float | None = None,
         width: int | None = None,
         height: int | None = None,
         fps: float | None = None,

@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 import re
 import signal
 import sys
@@ -42,7 +41,7 @@ logger = structlog.get_logger("downloader")
 shutdown_event = threading.Event()
 
 
-def signal_handler(signum: int, frame: Any) -> None:
+def signal_handler(signum: int, _frame: Any) -> None:
     """Handle shutdown signals."""
     logger.info("Shutdown signal received", signal=signum)
     shutdown_event.set()
@@ -151,7 +150,8 @@ def process_job(
         )
 
         # Publish metadata
-        file_size = os.path.getsize(video_path) if os.path.exists(video_path) else None
+        video_path_obj = Path(video_path)
+        file_size = video_path_obj.stat().st_size if video_path_obj.exists() else None
         event_publisher.publish_metadata(
             job_id=job.job_id,
             source_id=metadata.source_id,
@@ -199,9 +199,7 @@ def process_job(
 
         # Always mark as FAILED - yt-dlp already exhausted its internal retries
         # The retryable flag is informational for the user to manually retry
-        event_publisher.publish_state_change(
-            job.job_id, JobStatus.DOWNLOADING, JobStatus.FAILED
-        )
+        event_publisher.publish_state_change(job.job_id, JobStatus.DOWNLOADING, JobStatus.FAILED)
 
         raise
 
@@ -216,9 +214,7 @@ def process_job(
             stack=traceback.format_exc(),
         )
 
-        event_publisher.publish_state_change(
-            job.job_id, JobStatus.DOWNLOADING, JobStatus.FAILED
-        )
+        event_publisher.publish_state_change(job.job_id, JobStatus.DOWNLOADING, JobStatus.FAILED)
 
         raise
 
@@ -236,12 +232,12 @@ def consume_jobs(
     while not shutdown_event.is_set():
         try:
             # Block for 5 seconds waiting for a job
-            result = redis_client.blpop(queue_key, timeout=5)
+            result = redis_client.blpop([queue_key], timeout=5)
 
             if result is None:
                 continue
 
-            _, job_json = result
+            _, job_json = result  # type: ignore[misc]
             job_data = json.loads(job_json)
 
             try:

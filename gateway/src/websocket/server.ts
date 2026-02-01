@@ -154,7 +154,7 @@ function handleRedisEvent(message: EventMessage): void {
       }
       break;
 
-    case 'state_change':
+    case 'state_change': {
       const statePayload = payload as StateChangePayload;
 
       // Update database (always)
@@ -168,6 +168,7 @@ function handleRedisEvent(message: EventMessage): void {
         io.emit('state_change', message as EventMessage<StateChangePayload>);
       }
       break;
+    }
 
     case 'log':
       // Update database (always)
@@ -179,7 +180,7 @@ function handleRedisEvent(message: EventMessage): void {
       }
       break;
 
-    case 'error':
+    case 'error': {
       const errorPayload = payload as ErrorPayload;
 
       // Update database (always)
@@ -193,8 +194,9 @@ function handleRedisEvent(message: EventMessage): void {
         io.to(`job:${jobId}`).emit('error', message as EventMessage<ErrorPayload>);
       }
       break;
+    }
 
-    case 'metadata':
+    case 'metadata': {
       // Update media table with metadata from downloader (always)
       const metadataPayload = payload as Record<string, unknown>;
       updateMedia(jobId, {
@@ -214,6 +216,7 @@ function handleRedisEvent(message: EventMessage): void {
         videoPath: metadataPayload.filePath as string | undefined,
       });
       break;
+    }
   }
 }
 

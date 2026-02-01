@@ -27,19 +27,22 @@ import type { JobStatus, CreateJobRequest, Job, Media } from '../../types/index.
  * Removes path separators, null bytes, and other dangerous characters.
  */
 function sanitizeFilename(input: string): string {
-  return input
-    // Remove null bytes
-    .replace(/\0/g, '')
-    // Remove path separators
-    .replace(/[/\\]/g, '_')
-    // Remove other problematic characters
-    .replace(/[<>:"|?*]/g, '_')
-    // Remove control characters
-    .replace(/[\x00-\x1f\x7f]/g, '')
-    // Trim whitespace
-    .trim()
-    // Limit length to prevent filesystem issues
-    .slice(0, 200);
+  return (
+    input
+      // Remove null bytes
+      .replace(/\0/g, '')
+      // Remove path separators
+      .replace(/[/\\]/g, '_')
+      // Remove other problematic characters
+      .replace(/[<>:"|?*]/g, '_')
+      // Remove control characters
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x1f\x7f]/g, '')
+      // Trim whitespace
+      .trim()
+      // Limit length to prevent filesystem issues
+      .slice(0, 200)
+  );
 }
 
 // =============================================================================
@@ -146,11 +149,7 @@ export async function jobRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Generate file paths
         const tempDir = join(config.mediaRoot, 'incomplete', job.id);
-        const finalPath = join(
-          config.mediaRoot,
-          'complete',
-          `${job.id}.${job.outputContainer}`
-        );
+        const finalPath = join(config.mediaRoot, 'complete', `${job.id}.${job.outputContainer}`);
 
         // Write cookies file if provided
         let cookiesFile: string | undefined;
@@ -447,11 +446,7 @@ export async function jobRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Generate file paths
         const tempDir = join(config.mediaRoot, 'incomplete', job.id);
-        const finalPath = join(
-          config.mediaRoot,
-          'complete',
-          `${job.id}.${job.outputContainer}`
-        );
+        const finalPath = join(config.mediaRoot, 'complete', `${job.id}.${job.outputContainer}`);
 
         // Re-enqueue download job
         await enqueueDownload(
@@ -596,7 +591,8 @@ export async function jobRoutes(fastify: FastifyInstance): Promise<void> {
         } else {
           // Cannot resume - need to restart from beginning
           return reply.status(400).send({
-            error: 'Cannot resume: no completed stage to resume from. Use /retry to restart from beginning.',
+            error:
+              'Cannot resume: no completed stage to resume from. Use /retry to restart from beginning.',
             code: 'CANNOT_RESUME',
             details: {
               downloadCompleted,

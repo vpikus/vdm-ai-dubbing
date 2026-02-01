@@ -22,10 +22,16 @@ const configSchema = z.object({
   alertFreeSpaceGb: z.coerce.number().default(20),
 
   // Auth (validation relaxed in development, strict in production)
-  jwtSecret: z.string().min(1).refine(
-    (val) => process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || val.length >= 32,
-    { message: 'JWT secret must be at least 32 characters in production' }
-  ),
+  jwtSecret: z
+    .string()
+    .min(1)
+    .refine(
+      (val) =>
+        process.env.NODE_ENV === 'development' ||
+        process.env.NODE_ENV === 'test' ||
+        val.length >= 32,
+      { message: 'JWT secret must be at least 32 characters in production' }
+    ),
   jwtExpiresIn: z.string().default('7d'),
   adminUsername: z.string().min(1),
   adminPassword: z.string().min(1),

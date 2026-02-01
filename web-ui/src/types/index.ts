@@ -15,11 +15,7 @@ export type JobStatus =
 
 export type OutputContainer = 'mkv' | 'mp4' | 'webm';
 
-export type FormatPreset =
-  | 'bestvideo+bestaudio'
-  | 'best'
-  | 'bestaudio'
-  | 'worst';
+export type FormatPreset = 'bestvideo+bestaudio' | 'best' | 'bestaudio' | 'worst';
 
 export interface Job {
   id: string;

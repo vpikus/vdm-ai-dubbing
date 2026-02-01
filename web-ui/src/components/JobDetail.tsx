@@ -1,15 +1,5 @@
 import { useEffect } from 'react';
-import {
-  Modal,
-  Button,
-  Space,
-  Descriptions,
-  Divider,
-  Alert,
-  Tag,
-  Typography,
-  App,
-} from 'antd';
+import { Modal, Button, Space, Descriptions, Divider, Alert, Tag, Typography, App } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import type { JobDetail as JobDetailType } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -56,8 +46,12 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
     };
   }, [job.id]);
 
-  const isActive = ['QUEUED', 'DOWNLOADING', 'DOWNLOADED', 'DUBBING', 'DUBBED', 'MUXING'].includes(job.status);
-  const canCancel = ['QUEUED', 'DOWNLOADING', 'DOWNLOADED', 'DUBBING', 'DUBBED', 'MUXING'].includes(job.status);
+  const isActive = ['QUEUED', 'DOWNLOADING', 'DOWNLOADED', 'DUBBING', 'DUBBED', 'MUXING'].includes(
+    job.status
+  );
+  const canCancel = ['QUEUED', 'DOWNLOADING', 'DOWNLOADED', 'DUBBING', 'DUBBED', 'MUXING'].includes(
+    job.status
+  );
   const canRetry = ['FAILED', 'CANCELED'].includes(job.status);
   const canResume = job.status === 'FAILED' && job.requestedDubbing;
   const canDelete = ['COMPLETE', 'FAILED', 'CANCELED'].includes(job.status);
@@ -93,7 +87,8 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
     const payload = event.payload as Record<string, unknown> | undefined;
     if (event.event === 'log' && payload) return String(payload.message || '');
     if (event.event === 'state_change' && payload) return `${payload.from} → ${payload.to}`;
-    if (event.event === 'error' && payload) return String(payload.message || payload.code || 'Error');
+    if (event.event === 'error' && payload)
+      return String(payload.message || payload.code || 'Error');
     if (event.event === 'started') return 'Job started';
     if (event.event === 'progress' && payload) return `${payload.stage}: ${payload.percent}%`;
     return event.event;
@@ -107,11 +102,7 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
       width={700}
       footer={
         <Space>
-          {canCancel && (
-            <Button onClick={() => cancelJob(job.id)}>
-              Cancel Job
-            </Button>
-          )}
+          {canCancel && <Button onClick={() => cancelJob(job.id)}>Cancel Job</Button>}
           {canResume && (
             <Button
               type="primary"
@@ -156,13 +147,13 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
           />
         )}
 
-        {job.error && (
-          <Alert message={job.error} type="error" showIcon />
-        )}
+        {job.error && <Alert message={job.error} type="error" showIcon />}
 
         <Descriptions column={2} size="small">
           <Descriptions.Item label="URL" span={2}>
-            <Text copyable style={{ wordBreak: 'break-all' }}>{job.url}</Text>
+            <Text copyable style={{ wordBreak: 'break-all' }}>
+              {job.url}
+            </Text>
           </Descriptions.Item>
           <Descriptions.Item label="Created">{formatDate(job.createdAt)}</Descriptions.Item>
           <Descriptions.Item label="Updated">{formatDate(job.updatedAt)}</Descriptions.Item>
@@ -170,7 +161,9 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
             <Descriptions.Item label="Completed">{formatDate(job.completedAt)}</Descriptions.Item>
           )}
           <Descriptions.Item label="Format">{job.formatPreset}</Descriptions.Item>
-          <Descriptions.Item label="Container">{job.outputContainer.toUpperCase()}</Descriptions.Item>
+          <Descriptions.Item label="Container">
+            {job.outputContainer.toUpperCase()}
+          </Descriptions.Item>
           <Descriptions.Item label="Retries">{job.retries}</Descriptions.Item>
         </Descriptions>
 
@@ -179,19 +172,27 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
             <Divider>Media Info</Divider>
             <Descriptions column={2} size="small">
               {job.media.sourceTitle && (
-                <Descriptions.Item label="Title" span={2}>{job.media.sourceTitle}</Descriptions.Item>
+                <Descriptions.Item label="Title" span={2}>
+                  {job.media.sourceTitle}
+                </Descriptions.Item>
               )}
               {job.media.sourceUploader && (
                 <Descriptions.Item label="Uploader">{job.media.sourceUploader}</Descriptions.Item>
               )}
               {job.media.durationSec && (
-                <Descriptions.Item label="Duration">{formatDuration(job.media.durationSec)}</Descriptions.Item>
+                <Descriptions.Item label="Duration">
+                  {formatDuration(job.media.durationSec)}
+                </Descriptions.Item>
               )}
               {job.media.width && job.media.height && (
-                <Descriptions.Item label="Resolution">{job.media.width}x{job.media.height}</Descriptions.Item>
+                <Descriptions.Item label="Resolution">
+                  {job.media.width}x{job.media.height}
+                </Descriptions.Item>
               )}
               {job.media.fileSizeBytes && (
-                <Descriptions.Item label="File Size">{formatBytes(job.media.fileSizeBytes)}</Descriptions.Item>
+                <Descriptions.Item label="File Size">
+                  {formatBytes(job.media.fileSizeBytes)}
+                </Descriptions.Item>
               )}
             </Descriptions>
           </>
@@ -221,9 +222,7 @@ export function JobDetail({ job, onClose }: JobDetailProps) {
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     {new Date(event.ts).toLocaleTimeString()}
                   </Text>{' '}
-                  <span style={{ color: getEventColor(event) }}>
-                    {getEventMessage(event)}
-                  </span>
+                  <span style={{ color: getEventColor(event) }}>{getEventMessage(event)}</span>
                 </div>
               ))}
             </div>

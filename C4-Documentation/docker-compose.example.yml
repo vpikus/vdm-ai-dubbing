@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  # Redis Container - Message Broker and Queue
+  redis:
+    image: redis:7-alpine
+    container_name: ytdlp-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    ports:
+      - "127.0.0.1:6379:6379"  # Only expose to localhost for debugging
+    volumes:
+      - redis_data:/data
+    networks:
+      - ytdlp-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a $REDIS_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+
+  # Gateway Container - REST+WebSocket API, Orchestration, Web UI
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: ytdlp-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # HTTP/HTTPS + WebSocket
+    volumes:
+      - gateway_data:/app/data          # SQLite database
+      - media_data:/app/media:ro        # Read-only access to media for disk space checks
+    networks:
+      - ytdlp-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - DB_PATH=/app/data/db.sqlite
+      - MEDIA_ROOT=/app/media
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Downloader Container - Python Worker for yt-dlp
+  downloader:
+    build:
+      context: ./downloader
+      dockerfile: Dockerfile
+    container_name: ytdlp-downloader
+    restart: unless-stopped
+    volumes:
+      - media_data:/app/media           # Read-write access to media
+    networks:
+      - ytdlp-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - DOWNLOAD_TEMP_DIR=/app/media/tmp
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=3
+      - PROXY=${DOWNLOADER_PROXY:-}     # Optional HTTP proxy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "python -c \"import os,redis; redis.Redis.from_url(os.environ['REDIS_URL']).ping()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Dubber Container - Node.js Worker for Audio Dubbing
+  dubber:
+    build:
+      context: ./dubber
+      dockerfile: Dockerfile
+    container_name: ytdlp-dubber
+    restart: unless-stopped
+    volumes:
+      - media_data:/app/media           # Read-write access to media
+    networks:
+      - ytdlp-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - TARGET_LANG=${TARGET_LANG:-ru}
+      - DUBBING_CONCURRENCY=${DUBBING_CONCURRENCY:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=3
+      - VOT_API_KEY=${VOT_API_KEY:-}    # Optional VOT API key if required
+    healthcheck:
+      test: ["CMD", "sh", "-c", "node -e \"new (require('ioredis'))(process.env.REDIS_URL).ping().then(()=>process.exit(0)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: ${DUBBING_WORKERS:-2}   # Scale dubbing workers
+
+  # Muxer Container - Python Worker for Audio Muxing
+  muxer:
+    build:
+      context: ./muxer
+      dockerfile: Dockerfile
+    container_name: ytdlp-muxer
+    restart: unless-stopped
+    volumes:
+      - media_data:/app/media           # Read-write access to media
+    networks:
+      - ytdlp-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - DEFAULT_CONTAINER=${DEFAULT_CONTAINER:-mkv}
+      - DUCKING_LEVEL=${DUCKING_LEVEL:-0.3}
+      - NORMALIZATION_LUFS=${NORMALIZATION_LUFS:--18.0}
+      - MUXING_CONCURRENCY=${MUXING_CONCURRENCY:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=3
+    healthcheck:
+      test: ["CMD", "sh", "-c", "python -c \"import os,redis; redis.Redis.from_url(os.environ['REDIS_URL']).ping()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ytdlp-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  gateway_data:
+    driver: local
+  media_data:
+    driver: local
+    # For production, consider using a named volume with specific mount point:
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /mnt/media

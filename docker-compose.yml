@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: vdm-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vdm-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: vdm-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - DB_PATH=/app/data/db.sqlite
+      - MEDIA_ROOT=/app/media
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+    volumes:
+      - db_data:/app/data
+      - ./media:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - vdm-network
+
+  downloader:
+    build:
+      context: ./downloader
+      dockerfile: Dockerfile
+    container_name: vdm-downloader
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - DOWNLOAD_TEMP_DIR=/app/media/incomplete
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=${DOWNLOAD_MAX_RETRIES:-3}
+      - DOWNLOAD_PROXY=${DOWNLOAD_PROXY:-}
+      - DOWNLOAD_RATE_LIMIT=${DOWNLOAD_RATE_LIMIT:-}
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    networks:
+      - vdm-network
+
+  dubber:
+    build:
+      context: ./dubber
+      dockerfile: Dockerfile
+    container_name: vdm-dubber
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - TARGET_LANG=${TARGET_LANG:-ru}
+      - DUBBING_CONCURRENCY=${DUBBING_CONCURRENCY:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=${DUBBING_MAX_RETRIES:-3}
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - vdm-network
+
+  muxer:
+    build:
+      context: ./muxer
+      dockerfile: Dockerfile
+    container_name: vdm-muxer
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - MEDIA_ROOT=/app/media
+      - DEFAULT_CONTAINER=${DEFAULT_CONTAINER:-mkv}
+      - DUCKING_LEVEL=${DUCKING_LEVEL:-0.3}
+      - NORMALIZATION_LUFS=${NORMALIZATION_LUFS:--18.0}
+      - MUXING_CONCURRENCY=${MUXING_CONCURRENCY:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_RETRIES=${MUXING_MAX_RETRIES:-3}
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - vdm-network
+
+  web-ui:
+    build:
+      context: ./web-ui
+      dockerfile: Dockerfile
+    container_name: vdm-web-ui
+    restart: unless-stopped
+    ports:
+      - "${WEB_UI_PORT:-8080}:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - vdm-network
+
+volumes:
+  redis_data:
+    driver: local
+  db_data:
+    driver: local
+  # media_data removed - using bind mount to ./media instead
+
+networks:
+  vdm-network:
+    driver: bridge

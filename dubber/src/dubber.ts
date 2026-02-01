@@ -85,8 +85,8 @@ export async function performDubbing(job: DubJobData): Promise<string> {
       videoData,
       responseLang: responseLang,
       extraOpts: {
-          useLivelyVoice: useLivelyVoice,
-      }
+        useLivelyVoice: useLivelyVoice,
+      },
     });
 
     console.log('Initial translation response:', JSON.stringify(response, null, 2));
@@ -98,11 +98,13 @@ export async function performDubbing(job: DubJobData): Promise<string> {
     while (!response.translated && pollCount < maxPolls) {
       pollCount++;
       const waitTime = (response.remainingTime || 10) * 1000;
-      console.log(`Translation in progress, waiting ${waitTime/1000}s... (attempt ${pollCount}/${maxPolls})`);
+      console.log(
+        `Translation in progress, waiting ${waitTime / 1000}s... (attempt ${pollCount}/${maxPolls})`
+      );
       await publishLog(jobId, 'info', `Waiting for translation... (${pollCount}/${maxPolls})`);
       await publishProgress(jobId, 'dubbing', 30 + Math.min(25, pollCount));
 
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
 
       // Request again to check status
       response = await client.translateVideo({
@@ -113,7 +115,9 @@ export async function performDubbing(job: DubJobData): Promise<string> {
     }
 
     if (!response.translated || !response.url) {
-      throw new Error(`Translation failed: ${response.message || 'timeout or no audio URL returned'}`);
+      throw new Error(
+        `Translation failed: ${response.message || 'timeout or no audio URL returned'}`
+      );
     }
 
     const audioUrl = response.url;
@@ -146,13 +150,7 @@ export async function performDubbing(job: DubJobData): Promise<string> {
     const error = err as Error;
     console.error(`Dubbing failed for job ${jobId}:`, error);
 
-    await publishError(
-      jobId,
-      'DUBBING_ERROR',
-      error.message,
-      isRetryableError(error),
-      error.stack
-    );
+    await publishError(jobId, 'DUBBING_ERROR', error.message, isRetryableError(error), error.stack);
 
     throw error;
   }

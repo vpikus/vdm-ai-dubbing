@@ -1,9 +1,9 @@
 """Type definitions for Download Worker."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
+from typing import Any
 
 
 class JobStatus(str, Enum):
@@ -51,9 +51,9 @@ class DownloadJobData:
     download_subtitles: bool
     temp_dir: str
     final_path: str
-    proxy: Optional[str] = None
-    cookies_file: Optional[str] = None
-    rate_limit: Optional[str] = None
+    proxy: str | None = None
+    cookies_file: str | None = None
+    rate_limit: str | None = None
 
 
 @dataclass
@@ -62,10 +62,10 @@ class ProgressPayload:
 
     stage: str  # downloading, extracting, etc.
     percent: float
-    downloaded_bytes: Optional[int] = None
-    total_bytes: Optional[int] = None
-    speed: Optional[float] = None  # bytes per second
-    eta: Optional[int] = None  # seconds
+    downloaded_bytes: int | None = None
+    total_bytes: int | None = None
+    speed: float | None = None  # bytes per second
+    eta: int | None = None  # seconds
 
 
 @dataclass
@@ -91,7 +91,7 @@ class ErrorPayload:
     code: str
     message: str
     retryable: bool
-    stack: Optional[str] = None
+    stack: str | None = None
 
 
 @dataclass
@@ -101,15 +101,15 @@ class EventMessage:
     job_id: str
     type: str  # progress, state_change, log, error
     timestamp: str
-    payload: dict
+    payload: dict[str, Any]
 
     @classmethod
-    def create(cls, job_id: str, event_type: str, payload: dict) -> "EventMessage":
+    def create(cls, job_id: str, event_type: str, payload: dict[str, Any]) -> "EventMessage":
         """Create a new event message."""
         return cls(
             job_id=job_id,
             type=event_type,
-            timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             payload=payload,
         )
 
@@ -120,13 +120,13 @@ class MediaMetadata:
 
     source_id: str
     source_title: str
-    source_uploader: Optional[str]
-    source_upload_date: Optional[str]
-    source_description: Optional[str]
-    source_thumbnail_url: Optional[str]
-    duration_sec: Optional[float]
-    width: Optional[int]
-    height: Optional[int]
-    fps: Optional[float]
-    video_codec: Optional[str]
-    audio_codec: Optional[str]
+    source_uploader: str | None
+    source_upload_date: str | None
+    source_description: str | None
+    source_thumbnail_url: str | None
+    duration_sec: float | None
+    width: int | None
+    height: int | None
+    fps: float | None
+    video_codec: str | None
+    audio_codec: str | None

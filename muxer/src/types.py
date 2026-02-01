@@ -1,7 +1,7 @@
 """Type definitions for Muxing Worker."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -35,6 +35,6 @@ class EventMessage:
         return cls(
             job_id=job_id,
             type=event_type,
-            timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             payload=payload,
         )

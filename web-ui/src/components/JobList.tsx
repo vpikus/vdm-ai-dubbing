@@ -13,8 +13,7 @@ interface JobListProps {
 }
 
 export function JobList({ onSelectJob }: JobListProps) {
-  const { jobs, loading, error, fetchJobs, updateJobStatus, updateJobProgress } =
-    useJobStore();
+  const { jobs, loading, error, fetchJobs, updateJobStatus, updateJobProgress } = useJobStore();
 
   useEffect(() => {
     fetchJobs();

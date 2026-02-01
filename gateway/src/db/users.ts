@@ -51,10 +51,11 @@ export async function createUser(
 ): Promise<User> {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  runQuery(
-    'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)',
-    [username, passwordHash, role]
-  );
+  runQuery('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)', [
+    username,
+    passwordHash,
+    role,
+  ]);
 
   const user = getUserByUsername(username);
   if (!user) throw new Error('Failed to create user');
@@ -80,10 +81,7 @@ export async function verifyPassword(username: string, password: string): Promis
   if (!valid) return null;
 
   // Update last login time
-  runQuery('UPDATE users SET last_login_at = ? WHERE id = ?', [
-    new Date().toISOString(),
-    row.id,
-  ]);
+  runQuery('UPDATE users SET last_login_at = ? WHERE id = ?', [new Date().toISOString(), row.id]);
 
   return mapUserRow(row);
 }
@@ -107,15 +105,12 @@ export function deleteUser(userId: number): boolean {
 // SESSION OPERATIONS
 // =============================================================================
 
-export function createSession(
-  sessionId: string,
-  userId: number,
-  expiresAt: Date
-): void {
-  runQuery(
-    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
-    [sessionId, userId, expiresAt.toISOString()]
-  );
+export function createSession(sessionId: string, userId: number, expiresAt: Date): void {
+  runQuery('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)', [
+    sessionId,
+    userId,
+    expiresAt.toISOString(),
+  ]);
 }
 
 export function isSessionValid(sessionId: string): boolean {
@@ -135,9 +130,7 @@ export function revokeAllUserSessions(userId: number): void {
 }
 
 export function cleanupExpiredSessions(): number {
-  const result = runQuery('DELETE FROM sessions WHERE expires_at < ?', [
-    new Date().toISOString(),
-  ]);
+  const result = runQuery('DELETE FROM sessions WHERE expires_at < ?', [new Date().toISOString()]);
   return result.changes;
 }
 

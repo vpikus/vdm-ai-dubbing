@@ -1,7 +1,6 @@
 """FFmpeg-based audio mixing and muxing."""
 
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -24,10 +23,13 @@ class AudioMuxer:
         """Check if video file has at least one audio stream."""
         cmd = [
             "ffprobe",
-            "-v", "quiet",
-            "-print_format", "json",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
             "-show_streams",
-            "-select_streams", "a",
+            "-select_streams",
+            "a",
             video_path,
         ]
         try:
@@ -36,9 +38,9 @@ class AudioMuxer:
             return len(data.get("streams", [])) > 0
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr.decode() if e.stderr else str(e)
-            raise MuxingError(f"Failed to probe video file: {error_msg}")
+            raise MuxingError(f"Failed to probe video file: {error_msg}") from e
         except json.JSONDecodeError as e:
-            raise MuxingError(f"Failed to parse ffprobe output: {e}")
+            raise MuxingError(f"Failed to parse ffprobe output: {e}") from e
 
     def process(self, job: MuxJobData) -> str:
         """
@@ -59,10 +61,10 @@ class AudioMuxer:
         self.event_publisher.publish_log(job.job_id, "info", "Starting audio mixing and muxing")
 
         # Validate input files
-        if not os.path.exists(job.video_path):
+        if not Path(job.video_path).exists():
             raise MuxingError(f"Video file not found: {job.video_path}")
 
-        if not os.path.exists(job.audio_dubbed_path):
+        if not Path(job.audio_dubbed_path).exists():
             raise MuxingError(f"Dubbed audio file not found: {job.audio_dubbed_path}")
 
         # Create temp directory for intermediate files
@@ -124,22 +126,26 @@ class AudioMuxer:
         except subprocess.CalledProcessError as e:
             error_msg = f"FFmpeg failed: {e.stderr.decode() if e.stderr else str(e)}"
             log.error("FFmpeg error", error=error_msg)
-            raise MuxingError(error_msg)
+            raise MuxingError(error_msg) from e
 
         except Exception as e:
             log.error("Muxing failed", error=str(e))
-            raise MuxingError(str(e))
+            raise MuxingError(str(e)) from e
 
     def _extract_audio(self, video_path: str, output_path: str) -> None:
         """Extract audio from video file."""
         cmd = [
             "ffmpeg",
             "-y",  # Overwrite output
-            "-i", video_path,
+            "-i",
+            video_path,
             "-vn",  # No video
-            "-ac", "2",  # Stereo
-            "-ar", "48000",  # 48kHz
-            "-c:a", "pcm_s16le",  # 16-bit PCM
+            "-ac",
+            "2",  # Stereo
+            "-ar",
+            "48000",  # 48kHz
+            "-c:a",
+            "pcm_s16le",  # 16-bit PCM
             output_path,
         ]
 
@@ -169,11 +175,16 @@ class AudioMuxer:
         cmd = [
             "ffmpeg",
             "-y",
-            "-i", original_path,
-            "-i", dubbed_path,
-            "-filter_complex", filter_complex,
-            "-map", "[out]",
-            "-c:a", "pcm_s16le",
+            "-i",
+            original_path,
+            "-i",
+            dubbed_path,
+            "-filter_complex",
+            filter_complex,
+            "-map",
+            "[out]",
+            "-c:a",
+            "pcm_s16le",
             output_path,
         ]
 
@@ -214,32 +225,49 @@ class AudioMuxer:
         cmd = [
             "ffmpeg",
             "-y",
-            "-i", video_path,  # Input 0: original video (for video stream)
-            "-i", original_audio_path,  # Input 1: original audio
-            "-i", mixed_audio_path,  # Input 2: mixed/dubbed audio
+            "-i",
+            video_path,  # Input 0: original video (for video stream)
+            "-i",
+            original_audio_path,  # Input 1: original audio
+            "-i",
+            mixed_audio_path,  # Input 2: mixed/dubbed audio
             # Map video from input 0
-            "-map", "0:v",
+            "-map",
+            "0:v",
             # Map original audio from input 1
-            "-map", "1:a",
+            "-map",
+            "1:a",
             # Map dubbed audio from input 2
-            "-map", "2:a",
+            "-map",
+            "2:a",
             # Copy video stream (no re-encoding)
-            "-c:v", "copy",
+            "-c:v",
+            "copy",
             # Encode audio as AAC
-            "-c:a:0", "aac",
-            "-c:a:1", "aac",
+            "-c:a:0",
+            "aac",
+            "-c:a:1",
+            "aac",
             # Set audio bitrate
-            "-b:a:0", "192k",
-            "-b:a:1", "192k",
+            "-b:a:0",
+            "192k",
+            "-b:a:1",
+            "192k",
             # Metadata for original audio track
-            "-metadata:s:a:0", "language=und",
-            "-metadata:s:a:0", "title=Original",
+            "-metadata:s:a:0",
+            "language=und",
+            "-metadata:s:a:0",
+            "title=Original",
             # Metadata for dubbed audio track
-            f"-metadata:s:a:1", f"language={lang_code}",
-            "-metadata:s:a:1", "title=Dubbed",
+            "-metadata:s:a:1",
+            f"language={lang_code}",
+            "-metadata:s:a:1",
+            "title=Dubbed",
             # Set dubbed track as default
-            "-disposition:a:0", "0",
-            "-disposition:a:1", "default",
+            "-disposition:a:0",
+            "0",
+            "-disposition:a:1",
+            "default",
             output_path,
         ]
 

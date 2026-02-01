@@ -52,20 +52,11 @@ export function JobItem({ job, onSelect }: JobItemProps) {
     }
   }, [job.id, job.status]);
 
-  const isActive = useMemo(
-    () => ACTIVE_STATUSES.includes(job.status),
-    [job.status]
-  );
+  const isActive = useMemo(() => ACTIVE_STATUSES.includes(job.status), [job.status]);
 
-  const canCancel = useMemo(
-    () => ACTIVE_STATUSES.includes(job.status),
-    [job.status]
-  );
+  const canCancel = useMemo(() => ACTIVE_STATUSES.includes(job.status), [job.status]);
 
-  const canRetry = useMemo(
-    () => ['FAILED', 'CANCELED'].includes(job.status),
-    [job.status]
-  );
+  const canRetry = useMemo(() => ['FAILED', 'CANCELED'].includes(job.status), [job.status]);
 
   const canResume = useMemo(
     () => job.status === 'FAILED' && job.requestedDubbing,
@@ -118,18 +109,12 @@ export function JobItem({ job, onSelect }: JobItemProps) {
   };
 
   return (
-    <Card
-      hoverable
-      onClick={() => onSelect(job)}
-      styles={{ body: { padding: 16 } }}
-    >
+    <Card hoverable onClick={() => onSelect(job)} styles={{ body: { padding: 16 } }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Space style={{ marginBottom: 4 }}>
             <StatusBadge status={job.status} />
-            {job.requestedDubbing && (
-              <Tag color="purple">Dub: {job.targetLang}</Tag>
-            )}
+            {job.requestedDubbing && <Tag color="purple">Dub: {job.targetLang}</Tag>}
           </Space>
           <Text
             strong
@@ -185,14 +170,7 @@ export function JobItem({ job, onSelect }: JobItemProps) {
         </Space>
       </div>
 
-      {job.error && (
-        <Alert
-          message={job.error}
-          type="error"
-          style={{ marginTop: 8 }}
-          showIcon
-        />
-      )}
+      {job.error && <Alert message={job.error} type="error" style={{ marginTop: 8 }} showIcon />}
 
       {isActive && jobProgress && (
         <div style={{ marginTop: 12 }}>

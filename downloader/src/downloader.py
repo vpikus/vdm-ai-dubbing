@@ -1,6 +1,5 @@
 """yt-dlp wrapper for video downloading."""
 
-import os
 import re
 import shutil
 import time
@@ -9,7 +8,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import structlog
-import yt_dlp
+import yt_dlp  # type: ignore[import-untyped]
 
 from .config import config
 from .events import EventPublisher
@@ -69,7 +68,9 @@ def validate_output_container(container: str) -> str:
     """Validate output container against allowed values."""
     allowed = {e.value for e in OutputContainer}
     if container not in allowed:
-        logger.warning("Unknown output container, using default", container=container, allowed=list(allowed))
+        logger.warning(
+            "Unknown output container, using default", container=container, allowed=list(allowed)
+        )
         return OutputContainer.MKV.value
     return container
 
@@ -263,18 +264,22 @@ class VideoDownloader:
         except yt_dlp.utils.DownloadError as e:
             error_msg = str(e)
             log.error("Download failed", error=error_msg)
-            raise DownloadError(error_msg, retryable=self._is_retryable_error(error_msg))
+            raise DownloadError(error_msg, retryable=self._is_retryable_error(error_msg)) from e
 
         except Exception as e:
             log.error("Unexpected error during download", error=str(e))
-            raise DownloadError(str(e), retryable=False)
+            raise DownloadError(str(e), retryable=False) from e
 
         finally:
             self._current_job_id = None
             self._yt_logger = None
 
     def _build_options(
-        self, job: DownloadJobData, output_template: str, yt_logger: YtDlpLogger, validated_format: str
+        self,
+        job: DownloadJobData,
+        output_template: str,
+        yt_logger: YtDlpLogger,
+        validated_format: str,
     ) -> dict[str, Any]:
         """Build yt-dlp options dictionary."""
         opts: dict[str, Any] = {
@@ -324,10 +329,12 @@ class VideoDownloader:
         if job.cookies_file:
             try:
                 validate_path_within_root(job.cookies_file, config.media_root, "cookies_file")
-                if os.path.exists(job.cookies_file) and self._has_valid_cookies(job.cookies_file):
+                if Path(job.cookies_file).exists() and self._has_valid_cookies(job.cookies_file):
                     opts["cookiefile"] = job.cookies_file
             except DownloadError:
-                logger.warning("Cookies file path outside media root, ignoring", path=job.cookies_file)
+                logger.warning(
+                    "Cookies file path outside media root, ignoring", path=job.cookies_file
+                )
 
         # Add rate limit if configured
         rate_limit = job.rate_limit or config.rate_limit
@@ -383,9 +390,13 @@ class VideoDownloader:
         postprocessor = d.get("postprocessor", "unknown")
 
         if status == "started":
-            self.event_publisher.publish_log(self._current_job_id, "info", f"Post-processing: {postprocessor}")
+            self.event_publisher.publish_log(
+                self._current_job_id, "info", f"Post-processing: {postprocessor}"
+            )
         elif status == "finished":
-            self.event_publisher.publish_log(self._current_job_id, "info", f"Post-processing complete: {postprocessor}")
+            self.event_publisher.publish_log(
+                self._current_job_id, "info", f"Post-processing complete: {postprocessor}"
+            )
 
     def _find_output_file(self, temp_dir: Path, info: dict[str, Any]) -> Path | None:
         """Find the downloaded output file in temp directory."""
@@ -476,11 +487,11 @@ class VideoDownloader:
     def _has_valid_cookies(self, cookies_file: str) -> bool:
         """Check if cookies file contains actual cookie data (not just comments)."""
         try:
-            with open(cookies_file, "r", encoding="utf-8") as f:
+            with Path(cookies_file).open(encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
+                    stripped = line.strip()
                     # Skip empty lines and comments
-                    if not line or line.startswith("#"):
+                    if not stripped or stripped.startswith("#"):
                         continue
                     # Found a non-comment, non-empty line - likely a cookie entry
                     return True

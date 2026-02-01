@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react';
 import { Layout, Typography, Badge, Space } from 'antd';
 import { useAuthStore } from './store/authStore';
 import { useJobStore } from './store/jobStore';
-import {
-  Header,
-  LoginForm,
-  JobList,
-  JobDetail,
-  AddJobDialog,
-} from './components';
+import { Header, LoginForm, JobList, JobDetail, AddJobDialog } from './components';
 import type { Job } from './types';
 import { socketClient } from './services/socket';
 
@@ -81,14 +75,9 @@ function App() {
         <JobList onSelectJob={handleSelectJob} />
       </Content>
 
-      <AddJobDialog
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-      />
+      <AddJobDialog isOpen={showAddDialog} onClose={() => setShowAddDialog(false)} />
 
-      {selectedJob && (
-        <JobDetail job={selectedJob} onClose={handleCloseDetail} />
-      )}
+      {selectedJob && <JobDetail job={selectedJob} onClose={handleCloseDetail} />}
     </Layout>
   );
 }

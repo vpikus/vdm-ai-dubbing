@@ -102,25 +102,36 @@ class SocketClient {
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error.message);
       // Handle authentication errors
-      if (error.message?.includes('401') || error.message?.includes('unauthorized') || error.message?.includes('Unauthorized')) {
+      if (
+        error.message?.includes('401') ||
+        error.message?.includes('unauthorized') ||
+        error.message?.includes('Unauthorized')
+      ) {
         useAuthStore.getState().logout();
       }
     });
 
     this.socket.on('progress', (data: { jobId: string; payload: ProgressPayload }) => {
-      this.handlers.progress.forEach((handler) => handler({
-        jobId: data.jobId,
-        progress: data.payload,
-      }));
+      this.handlers.progress.forEach((handler) =>
+        handler({
+          jobId: data.jobId,
+          progress: data.payload,
+        })
+      );
     });
 
-    this.socket.on('state_change', (data: { jobId: string; payload: { from: string; to: JobStatus; error?: string } }) => {
-      this.handlers.state.forEach((handler) => handler({
-        jobId: data.jobId,
-        status: data.payload.to,
-        error: data.payload.error,
-      }));
-    });
+    this.socket.on(
+      'state_change',
+      (data: { jobId: string; payload: { from: string; to: JobStatus; error?: string } }) => {
+        this.handlers.state.forEach((handler) =>
+          handler({
+            jobId: data.jobId,
+            status: data.payload.to,
+            error: data.payload.error,
+          })
+        );
+      }
+    );
 
     this.socket.on('log', (data: LogEvent) => {
       this.handlers.log.forEach((handler) => handler(data));

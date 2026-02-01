@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Build outputs
+dist/
+build/
+*.min.js
+
+# Generated files
+package-lock.json
+*.lock
+
+# Config files that shouldn't be formatted
+*.md

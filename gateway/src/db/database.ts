@@ -56,9 +56,9 @@ export function runMigrations(): void {
   }
 
   // Get applied migrations
-  const appliedMigrations = database
-    .prepare('SELECT name FROM migrations')
-    .all() as { name: string }[];
+  const appliedMigrations = database.prepare('SELECT name FROM migrations').all() as {
+    name: string;
+  }[];
   const appliedSet = new Set(appliedMigrations.map((m) => m.name));
 
   // Find and apply pending migrations - automatically discover all .sql files

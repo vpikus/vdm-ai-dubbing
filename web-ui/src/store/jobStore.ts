@@ -113,7 +113,10 @@ export const useJobStore = create<JobState>((set) => ({
       set((state) => ({
         jobs: state.jobs.map((j) => (j.id === id ? result : j)),
       }));
-      showSuccess('Job resumed', result.resumedFrom ? `Resumed from ${result.resumedFrom}` : 'Job has been resumed');
+      showSuccess(
+        'Job resumed',
+        result.resumedFrom ? `Resumed from ${result.resumedFrom}` : 'Job has been resumed'
+      );
       return { resumedFrom: result.resumedFrom };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to resume job';
@@ -154,11 +157,18 @@ export const useJobStore = create<JobState>((set) => ({
 
       return {
         jobs: state.jobs.map((j) =>
-          j.id === jobId ? { ...j, status, error: error ?? undefined, updatedAt: new Date().toISOString() } : j
+          j.id === jobId
+            ? { ...j, status, error: error ?? undefined, updatedAt: new Date().toISOString() }
+            : j
         ),
         selectedJob:
           state.selectedJob?.id === jobId
-            ? { ...state.selectedJob, status, error: error ?? undefined, updatedAt: new Date().toISOString() }
+            ? {
+                ...state.selectedJob,
+                status,
+                error: error ?? undefined,
+                updatedAt: new Date().toISOString(),
+              }
             : state.selectedJob,
       };
     });

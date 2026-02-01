@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Video Download Manager is a Transmission-like queue-based video download manager with optional AI voice-over dubbing. Built with Docker containers and microservices architecture.
+Video Download Manager is a queue-based video download manager with optional AI voice-over dubbing. Built with Docker containers and microservices architecture.
 
 ## Build & Development Commands
 
@@ -134,12 +134,12 @@ Tables: `users`, `jobs`, `media`, `job_events`
 
 ## Configuration
 
-All configuration via environment variables. Copy `C4-Documentation/.env.example` to `.env` and configure:
+All configuration via environment variables. Copy `.env.example` to `.env` and configure:
 - `REDIS_PASSWORD` - Required (change from placeholder)
 - `JWT_SECRET` - Change for production
 - `TARGET_LANG` - Dubbing target language (default: ru)
 
-See `C4-Documentation/.env.example` for complete reference.
+See `.env.example` for complete reference.
 
 ## Documentation
 

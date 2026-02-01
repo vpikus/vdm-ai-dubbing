@@ -1,12 +1,12 @@
-# C4 Context Level: Transmission-like YT-DLP Downloader System
+# C4 Context Level: Video Download Manager System
 
 ## System Overview
 
 ### Short Description
-A queue-based video download manager with optional AI voice-over dubbing, providing a Transmission-like user experience for downloading and localizing video content.
+A queue-based video download manager with optional AI voice-over dubbing for downloading and localizing video content.
 
 ### Long Description
-The **Transmission-like YT-DLP Downloader with Optional Dubbing** is a web-based video download and localization system that enables users to download videos from YouTube and 1000+ other platforms supported by yt-dlp, with an optional automated voice-over translation feature. The system provides a familiar queue-centric user interface similar to the Transmission torrent client, allowing users to add video URLs, monitor download progress in real-time, control job execution (start, pause, resume, cancel), and optionally dub downloaded videos into their preferred language (default: Russian).
+The **Video Download Manager with Optional Dubbing** is a web-based video download and localization system that enables users to download videos from YouTube and 1000+ other platforms supported by yt-dlp, with an optional automated voice-over translation feature. The system provides a queue-centric user interface allowing users to add video URLs, monitor download progress in real-time, control job execution (start, pause, resume, cancel), and optionally dub downloaded videos into their preferred language (default: Russian).
 
 The system solves the problem of accessing foreign-language video content by combining reliable video acquisition with automated AI-powered voice-over translation. Users can download videos with the original audio track intact while adding a professionally mixed dubbed track in their target language, enabling them to switch between languages in their media player. The system handles all technical complexity (video downloading, audio extraction, translation, mixing, and multi-track packaging) through a simple web interface.
 
@@ -15,7 +15,7 @@ Key capabilities include:
 - **Optional AI voice-over dubbing** using Yandex Voice-Over Translation (VOT) for automated speech translation to target languages
 - **Professional audio mixing** with intelligent ducking that reduces original volume during dubbed speech for clear voice-over presentation
 - **Real-time progress monitoring** via WebSocket for live updates on download speed, completion percentage, and current stage
-- **Queue-based job management** with familiar torrent-client controls (pause, resume, cancel, prioritize) and persistent state across restarts
+- **Queue-based job management** with standard controls (pause, resume, cancel, prioritize) and persistent state across restarts
 - **Media library organization** with configurable folder structures, metadata extraction, and multi-track audio packaging for media player compatibility
 - **Production-ready deployment** via Docker Compose with horizontal scaling support, health monitoring, and Prometheus metrics
 
@@ -113,7 +113,7 @@ The system is designed for single-admin use in MVP, running on a local Linux ser
 - **User Journey**: [Monitor Download Progress Journey](#monitor-download-progress-journey)
 
 ### Job Control
-- **Description**: Manage job lifecycle with Transmission-like controls: start, pause, resume, cancel, prioritize, and view per-job logs
+- **Description**: Manage job lifecycle with standard controls: start, pause, resume, cancel, prioritize, and view per-job logs
 - **Users**: Admin User, CLI/Script User
 - **User Journey**: [Cancel a Stuck Download Journey](#cancel-a-stuck-download-journey), [Retry a Failed Job Journey](#retry-a-failed-job-journey)
 
@@ -276,7 +276,7 @@ flowchart TB
     end
 
     subgraph System["🎬 YT-DLP Downloader System"]
-        downloader_system["📦 Video Download Manager<br/><i>Queue-based download & dubbing<br/>with Transmission-like UX</i>"]
+        downloader_system["📦 Video Download Manager<br/><i>Queue-based download & dubbing</i>"]
     end
 
     subgraph ExternalSystems["🌐 External Systems"]
@@ -332,7 +332,7 @@ External systems and dependencies:
 ### System Scope
 **In scope**:
 - Video downloading, dubbing, and multi-track audio packaging
-- Job queue management with Transmission-like controls
+- Job queue management with standard controls
 - Real-time progress monitoring and state management
 - Media library organization with metadata extraction
 - REST and WebSocket APIs for Web UI and automation

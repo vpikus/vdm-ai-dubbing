@@ -3,7 +3,7 @@
 ## Overview
 
 - **Name**: Bash Examples / Workflow Scripts
-- **Description**: Reference implementations demonstrating the complete download, translate (dub), and mux workflow for the Transmission-like YT-DLP Downloader with Optional Dubbing system
+- **Description**: Reference implementations demonstrating the complete download, translate (dub), and mux workflow for the Video Download Manager with Optional Dubbing system
 - **Location**: `../docs/examples/`
 - **Language**: Bash (Shell scripting)
 - **Purpose**: Provide executable examples of the intended end-to-end workflow: downloading videos from YouTube/playlists using yt-dlp, optionally translating audio using vot-cli, and mixing original and dubbed audio tracks using ffmpeg

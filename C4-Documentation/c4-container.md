@@ -1,8 +1,8 @@
-# C4 Container Level: Transmission-like YT-DLP Downloader System
+# C4 Container Level: Video Download Manager System
 
 ## Overview
 
-This document describes the container-level architecture of the Transmission-like YT-DLP Downloader with Optional Dubbing system. The system is deployed as a Docker Compose application with five containers orchestrating video download, audio dubbing, and audio muxing workflows.
+This document describes the container-level architecture of the Video Download Manager with Optional Dubbing system. The system is deployed as a Docker Compose application with five containers orchestrating video download, audio dubbing, and audio muxing workflows.
 
 ## Containers
 
@@ -194,9 +194,9 @@ This container deploys the following components:
 
 ### Purpose
 
-The Downloader Container reliably downloads video and audio content from YouTube and any service supported by yt-dlp. It consumes jobs from the `q:download` Redis queue with strict concurrency of 1 (enforcing sequential downloads like Transmission), uses yt-dlp's Python API with progress hooks to emit real-time updates, downloads media to a temporary directory, and atomically moves completed files to the final library path.
+The Downloader Container reliably downloads video and audio content from YouTube and any service supported by yt-dlp. It consumes jobs from the `q:download` Redis queue with strict concurrency of 1 (enforcing sequential downloads), uses yt-dlp's Python API with progress hooks to emit real-time updates, downloads media to a temporary directory, and atomically moves completed files to the final library path.
 
-This container solves the problem of reliable, single-threaded video acquisition with comprehensive progress tracking. The single-threaded design prevents bandwidth saturation and rate limiting while providing predictable, queue-based behavior familiar to users of torrent clients like Transmission.
+This container solves the problem of reliable, single-threaded video acquisition with comprehensive progress tracking. The single-threaded design prevents bandwidth saturation and rate limiting while providing predictable, queue-based behavior.
 
 ### Components
 

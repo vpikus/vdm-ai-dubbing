@@ -7,9 +7,9 @@
 - **Technology**: Python 3.11+, yt-dlp, Redis queue consumer (single concurrency)
 
 ## Purpose
-The Download Worker Component is responsible for reliably downloading video and audio content from YouTube and any service supported by yt-dlp. It consumes jobs from a Redis queue with strict concurrency of 1 (enforcing sequential downloads like Transmission), uses yt-dlp's Python API with progress hooks to emit real-time updates, downloads media to a temporary directory, and atomically moves completed files to the final library path.
+The Download Worker Component is responsible for reliably downloading video and audio content from YouTube and any service supported by yt-dlp. It consumes jobs from a Redis queue with strict concurrency of 1 (enforcing sequential downloads), uses yt-dlp's Python API with progress hooks to emit real-time updates, downloads media to a temporary directory, and atomically moves completed files to the final library path.
 
-This component solves the problem of reliable, single-threaded video acquisition with comprehensive progress tracking. The single-threaded design prevents bandwidth saturation and rate limiting while providing predictable, queue-based behavior familiar to users of torrent clients like Transmission. It handles format selection, subtitle extraction, metadata retrieval, and robust error handling with retries.
+This component solves the problem of reliable, single-threaded video acquisition with comprehensive progress tracking. The single-threaded design prevents bandwidth saturation and rate limiting while providing predictable, queue-based behavior. It handles format selection, subtitle extraction, metadata retrieval, and robust error handling with retries.
 
 ## Software Features
 - **yt-dlp Integration**: Uses yt-dlp Python API for video/audio download from 1000+ supported sites

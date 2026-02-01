@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   completed_at DATETIME,
   requested_dubbing INTEGER NOT NULL DEFAULT 0,
   target_lang TEXT NOT NULL DEFAULT 'ru',
+  use_lively_voice INTEGER NOT NULL DEFAULT 0 CHECK (use_lively_voice IN (0, 1)),
   format_preset TEXT DEFAULT 'bestvideo+bestaudio',
   output_container TEXT DEFAULT 'mkv',
   download_subtitles INTEGER NOT NULL DEFAULT 0,

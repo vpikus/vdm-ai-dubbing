@@ -36,6 +36,12 @@ const themeConfig: ThemeConfig = {
       headerBg: '#1f2937',
       bodyBg: '#111827',
     },
+    Notification: {
+      colorBgElevated: '#1f2937',
+      colorText: 'rgba(255, 255, 255, 0.87)',
+      colorTextHeading: 'rgba(255, 255, 255, 0.95)',
+      colorIcon: '#6366f1',
+    },
   },
 };
 

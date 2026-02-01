@@ -37,6 +37,8 @@ class SocketClient {
   private subscribedJobs: Set<string> = new Set();
   // Reference counting for subscriptions - track how many components subscribed to each job
   private subscriptionCounts: Map<string, number> = new Map();
+  private authenticated: boolean = false;
+  private pendingSubscriptions: string[] = [];
   private handlers: {
     progress: EventHandler<ProgressEvent>[];
     state: EventHandler<StateEvent>[];
@@ -64,9 +66,32 @@ class SocketClient {
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected');
-      // Re-subscribe to jobs after reconnect
-      if (this.subscribedJobs.size > 0) {
-        this.socket?.emit('subscribe', Array.from(this.subscribedJobs));
+      this.authenticated = false;
+
+      // Authenticate with JWT token
+      if (token) {
+        this.socket?.emit('authenticate', token);
+      }
+    });
+
+    this.socket.on('authenticated', (data: { success: boolean }) => {
+      if (data.success) {
+        console.log('WebSocket authenticated');
+        this.authenticated = true;
+
+        // Re-subscribe to jobs after authentication
+        if (this.subscribedJobs.size > 0) {
+          this.socket?.emit('subscribe', Array.from(this.subscribedJobs));
+        }
+
+        // Process any pending subscriptions
+        if (this.pendingSubscriptions.length > 0) {
+          this.socket?.emit('subscribe', this.pendingSubscriptions);
+          this.pendingSubscriptions = [];
+        }
+      } else {
+        console.error('WebSocket authentication failed');
+        useAuthStore.getState().logout();
       }
     });
 
@@ -111,6 +136,8 @@ class SocketClient {
     this.socket = null;
     this.subscribedJobs.clear();
     this.subscriptionCounts.clear();
+    this.authenticated = false;
+    this.pendingSubscriptions = [];
   }
 
   subscribe(jobId: string): void {
@@ -121,7 +148,13 @@ class SocketClient {
     // Only actually subscribe to server if this is the first subscription
     if (!this.subscribedJobs.has(jobId)) {
       this.subscribedJobs.add(jobId);
-      this.socket?.emit('subscribe', [jobId]);
+
+      // Queue subscription if not authenticated yet
+      if (!this.authenticated) {
+        this.pendingSubscriptions.push(jobId);
+      } else {
+        this.socket?.emit('subscribe', [jobId]);
+      }
     }
   }
 
@@ -134,6 +167,11 @@ class SocketClient {
       if (this.subscribedJobs.has(jobId)) {
         this.subscribedJobs.delete(jobId);
         this.socket?.emit('unsubscribe', [jobId]);
+      }
+      // Also remove from pending subscriptions to prevent resubscription after auth
+      const pendingIndex = this.pendingSubscriptions.indexOf(jobId);
+      if (pendingIndex !== -1) {
+        this.pendingSubscriptions.splice(pendingIndex, 1);
       }
     } else {
       // Still have other subscribers - just decrement count

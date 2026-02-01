@@ -1,7 +1,7 @@
 """Type definitions for Muxing Worker."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -15,7 +15,7 @@ class MuxJobData:
     target_lang: str
     output_container: str
     ducking_level: float
-    normalization_lufs: float
+    normalization_lufs: float  # TODO: Implement audio normalization in muxer
     temp_dir: str
     final_path: str
 
@@ -35,6 +35,6 @@ class EventMessage:
         return cls(
             job_id=job_id,
             type=event_type,
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             payload=payload,
         )

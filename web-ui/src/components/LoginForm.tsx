@@ -103,12 +103,6 @@ export function LoginForm() {
           </Form>
         </Card>
 
-        <Text
-          type="secondary"
-          style={{ display: 'block', textAlign: 'center', marginTop: 16 }}
-        >
-          Default credentials: admin / admin
-        </Text>
       </div>
     </div>
   );

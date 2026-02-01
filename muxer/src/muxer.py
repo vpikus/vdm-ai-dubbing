@@ -1,5 +1,6 @@
 """FFmpeg-based audio mixing and muxing."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -7,7 +8,6 @@ from pathlib import Path
 
 import structlog
 
-from .config import config
 from .events import EventPublisher
 from .types import MuxJobData
 
@@ -19,6 +19,26 @@ class AudioMuxer:
 
     def __init__(self, event_publisher: EventPublisher):
         self.event_publisher = event_publisher
+
+    def _has_audio_stream(self, video_path: str) -> bool:
+        """Check if video file has at least one audio stream."""
+        cmd = [
+            "ffprobe",
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_streams",
+            "-select_streams", "a",
+            video_path,
+        ]
+        try:
+            result = subprocess.run(cmd, capture_output=True, check=True)
+            data = json.loads(result.stdout)
+            return len(data.get("streams", [])) > 0
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise MuxingError(f"Failed to probe video file: {error_msg}")
+        except json.JSONDecodeError as e:
+            raise MuxingError(f"Failed to parse ffprobe output: {e}")
 
     def process(self, job: MuxJobData) -> str:
         """
@@ -50,6 +70,10 @@ class AudioMuxer:
         temp_dir.mkdir(parents=True, exist_ok=True)
 
         try:
+            # Validate video has audio stream before attempting extraction
+            if not self._has_audio_stream(job.video_path):
+                raise MuxingError(f"Video file has no audio stream: {job.video_path}")
+
             # Step 1: Extract original audio from video
             log.info("Extracting original audio")
             self.event_publisher.publish_progress(job.job_id, "mixing", 10)
@@ -119,7 +143,7 @@ class AudioMuxer:
             output_path,
         ]
 
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         logger.debug("Audio extraction complete", output=output_path)
 
     def _mix_audio_with_ducking(
@@ -153,7 +177,7 @@ class AudioMuxer:
             output_path,
         ]
 
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         logger.debug("Audio mixing complete", output=output_path)
 
     def _mux_video(
@@ -219,7 +243,7 @@ class AudioMuxer:
             output_path,
         ]
 
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         logger.debug("Video muxing complete", output=output_path)
 
 

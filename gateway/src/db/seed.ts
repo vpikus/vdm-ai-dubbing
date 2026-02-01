@@ -10,8 +10,18 @@ async function seed() {
   console.log('Initializing database...');
   getDatabase(); // Initialize database
 
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.error('ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required');
+    process.exit(1);
+  }
+
+  if (adminPassword.length < 8) {
+    console.error('ADMIN_PASSWORD must be at least 8 characters');
+    process.exit(1);
+  }
 
   // Check if admin already exists
   const existingAdmin = getUserByUsername(adminUsername);

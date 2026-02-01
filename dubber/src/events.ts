@@ -3,12 +3,44 @@ import { config } from './config.js';
 import type { EventMessage } from './types.js';
 
 let redis: Redis | null = null;
+let redisReady = false;
 
 export function getRedis(): Redis {
   if (!redis) {
-    redis = new Redis(config.redisUrl);
+    redis = new Redis(config.redisUrl, {
+      maxRetriesPerRequest: null,
+      retryStrategy(times: number) {
+        // Exponential backoff with max 30 seconds
+        const delay = Math.min(times * 1000, 30000);
+        console.log(`Redis reconnecting in ${delay}ms (attempt ${times})`);
+        return delay;
+      },
+    });
+
+    redis.on('connect', () => {
+      console.log('Redis events client connected');
+      redisReady = true;
+    });
+
+    redis.on('error', (err) => {
+      console.error('Redis events client error:', err.message);
+      redisReady = false;
+    });
+
+    redis.on('close', () => {
+      console.log('Redis events client disconnected');
+      redisReady = false;
+    });
+
+    redis.on('reconnecting', () => {
+      console.log('Redis events client reconnecting...');
+    });
   }
   return redis;
+}
+
+export function isRedisReady(): boolean {
+  return redisReady;
 }
 
 export async function closeRedis(): Promise<void> {

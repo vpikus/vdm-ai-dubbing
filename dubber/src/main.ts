@@ -5,9 +5,13 @@ import { performDubbing } from './dubber.js';
 import { publishStateChange, publishLog, publishError, closeRedis, getRedis } from './events.js';
 import type { DubJobData, MuxJobData } from './types.js';
 
+// Redact password from Redis URL for safe logging (handles redis:// and rediss://)
+function redactRedisUrl(url: string): string {
+  return url.replace(/(rediss?:\/\/[^:]*:)[^@]+(@)/, '$1***$2');
+}
+
 console.log('Starting Dubbing Worker...');
-console.log(`Redis URL: ${config.redisUrl}`);
-console.log(`Target Language: ${config.targetLang}`);
+console.log(`Redis URL: ${redactRedisUrl(config.redisUrl)}`);
 console.log(`Concurrency: ${config.concurrency}`);
 
 // Create Redis connection for BullMQ
@@ -98,14 +102,22 @@ worker.on('error', (err) => {
   console.error('Worker error:', err);
 });
 
-// Graceful shutdown
+// Graceful shutdown with proper drain
 async function shutdown(signal: string): Promise<void> {
-  console.log(`Received ${signal}, shutting down...`);
+  console.log(`Received ${signal}, shutting down gracefully...`);
 
   try {
+    // First, pause the worker to stop accepting new jobs
+    await worker.pause();
+    console.log('Worker paused, waiting for active jobs to complete...');
+
+    // Close worker (waits for active jobs to complete)
     await worker.close();
-    await closeRedis();
-    await connection.quit();
+    console.log('Worker closed');
+
+    // Close Redis connections in parallel
+    await Promise.all([closeRedis(), connection.quit()]);
+
     console.log('Shutdown complete');
     process.exit(0);
   } catch (err) {

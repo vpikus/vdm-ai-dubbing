@@ -10,13 +10,33 @@ import type { DubJobData } from './types.js';
 // VOT.js responseLang (target TTS) supports: ru, en, kk
 type VOTResponseLang = 'ru' | 'en' | 'kk';
 
-// Map target language codes to VOT.js supported response languages
+// Supported language mappings
+const SUPPORTED_LANGUAGES: Record<string, VOTResponseLang> = {
+  ru: 'ru',
+  russian: 'ru',
+  en: 'en',
+  english: 'en',
+  kk: 'kk',
+  kazakh: 'kk',
+};
+
+/**
+ * Map target language codes to VOT.js supported response languages.
+ * Throws an error for unsupported languages.
+ */
 function mapResponseLang(lang: string): VOTResponseLang {
   const langLower = lang.toLowerCase();
-  if (langLower === 'en' || langLower === 'english') return 'en';
-  if (langLower === 'kk' || langLower === 'kazakh') return 'kk';
-  // Default to Russian for all other languages
-  return 'ru';
+  const mapped = SUPPORTED_LANGUAGES[langLower];
+
+  if (!mapped) {
+    const supportedList = [...new Set(Object.values(SUPPORTED_LANGUAGES))].join(', ');
+    throw new Error(
+      `Unsupported dubbing language: "${lang}". VOT.js only supports: ${supportedList}. ` +
+        `Please choose a supported target language.`
+    );
+  }
+
+  return mapped;
 }
 
 /**

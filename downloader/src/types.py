@@ -1,7 +1,7 @@
 """Type definitions for Download Worker."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -109,7 +109,7 @@ class EventMessage:
         return cls(
             job_id=job_id,
             type=event_type,
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             payload=payload,
         )
 

@@ -2,10 +2,12 @@
  * E2E API Tests
  */
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'testadmin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'testpassword123';
 
 let authToken = null;
 
@@ -36,7 +38,7 @@ describe('API E2E Tests', () => {
     it('should return healthy status', async () => {
       const { status, data } = await request('/healthz');
       assert.strictEqual(status, 200);
-      assert.strictEqual(data.status, 'healthy');
+      assert.strictEqual(data.status, 'ok');
     });
 
     it('should return readiness status', async () => {
@@ -46,24 +48,28 @@ describe('API E2E Tests', () => {
   });
 
   describe('Authentication', () => {
-    it('should login with default credentials', async () => {
+    it('should login with test credentials', async () => {
       const { status, data } = await request('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({
-          username: 'admin',
-          password: 'admin',
+          username: ADMIN_USERNAME,
+          password: ADMIN_PASSWORD,
         }),
       });
 
       assert.strictEqual(status, 200);
       assert.ok(data.token);
       assert.ok(data.user);
-      assert.strictEqual(data.user.username, 'admin');
+      assert.strictEqual(data.user.username, ADMIN_USERNAME);
 
       authToken = data.token;
     });
 
     it('should reject invalid credentials', async () => {
+      // Clear auth token to ensure we're testing unauthenticated login
+      const savedToken = authToken;
+      authToken = null;
+
       const { status } = await request('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({
@@ -71,6 +77,9 @@ describe('API E2E Tests', () => {
           password: 'wrongpassword',
         }),
       });
+
+      // Restore auth token for subsequent tests
+      authToken = savedToken;
 
       assert.strictEqual(status, 401);
     });
@@ -104,8 +113,9 @@ describe('API E2E Tests', () => {
       const { status, data } = await request('/api/jobs');
 
       assert.strictEqual(status, 200);
-      assert.ok(Array.isArray(data));
-      assert.ok(data.length > 0);
+      assert.ok(Array.isArray(data.jobs));
+      assert.ok(data.jobs.length > 0);
+      assert.ok(typeof data.total === 'number');
     });
 
     it('should get job details', async () => {

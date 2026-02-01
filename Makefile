@@ -1,6 +1,6 @@
 # Video Download Manager - Makefile
 
-.PHONY: help build up down logs clean test dev install install-gateway install-web-ui install-dubber check-locks
+.PHONY: help build up down logs clean test dev install install-gateway install-web-ui install-dubber check-locks redeploy
 
 # Default target
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "  make build        - Build all Docker images"
 	@echo "  make up           - Start all services"
 	@echo "  make down         - Stop all services"
+	@echo "  make redeploy     - Full redeploy (down, install, build, up)"
 	@echo "  make logs         - View service logs"
 	@echo "  make logs-f       - Follow service logs"
 	@echo ""
@@ -100,6 +101,10 @@ shell-gw:
 
 shell-redis:
 	docker-compose exec redis redis-cli -a $${REDIS_PASSWORD:-changeme}
+
+# Full redeploy (down, install, build, up)
+redeploy: down install build up
+	@echo "Full redeploy complete"
 
 # Production
 prod-up:

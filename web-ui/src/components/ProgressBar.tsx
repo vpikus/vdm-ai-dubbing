@@ -20,14 +20,16 @@ function formatBytes(bytes: number): string {
 }
 
 function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  if (seconds < 3600) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
+  // Round total seconds first to avoid "59m 60s" edge case
+  const totalSecs = Math.round(seconds);
+  if (totalSecs < 60) return `${totalSecs}s`;
+  if (totalSecs < 3600) {
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
     return `${mins}m ${secs}s`;
   }
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
+  const hours = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
   return `${hours}h ${mins}m`;
 }
 

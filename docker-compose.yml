@@ -5,13 +5,15 @@ services:
     image: redis:7-alpine
     container_name: vdm-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    # Redis only exposed internally via vdm-network; no host port needed
+    # Uncomment below for local debugging only:
+    # ports:
+    #   - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,13 +31,13 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       - DB_PATH=/app/data/db.sqlite
       - MEDIA_ROOT=/app/media
-      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required (min 32 chars)}
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:?ADMIN_USERNAME is required}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required (min 8 chars)}
     volumes:
       - db_data:/app/data
       - ./media:/app/media
@@ -57,7 +59,7 @@ services:
     container_name: vdm-downloader
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       - MEDIA_ROOT=/app/media
       - DOWNLOAD_TEMP_DIR=/app/media/incomplete
       - LOG_LEVEL=${LOG_LEVEL:-info}
@@ -81,7 +83,7 @@ services:
     container_name: vdm-dubber
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       - MEDIA_ROOT=/app/media
       - TARGET_LANG=${TARGET_LANG:-ru}
       - DUBBING_CONCURRENCY=${DUBBING_CONCURRENCY:-2}
@@ -102,7 +104,7 @@ services:
     container_name: vdm-muxer
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       - MEDIA_ROOT=/app/media
       - DEFAULT_CONTAINER=${DEFAULT_CONTAINER:-mkv}
       - DUCKING_LEVEL=${DUCKING_LEVEL:-0.3}

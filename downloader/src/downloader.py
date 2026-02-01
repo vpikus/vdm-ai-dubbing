@@ -5,16 +5,73 @@ import re
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from urllib.parse import urlparse
 
 import structlog
 import yt_dlp
 
 from .config import config
 from .events import EventPublisher
-from .types import DownloadJobData, MediaMetadata
+from .types import DownloadJobData, FormatPreset, MediaMetadata, OutputContainer
 
 logger = structlog.get_logger(__name__)
+
+# Maximum number of duplicate filename attempts before failing
+MAX_DUPLICATE_ATTEMPTS = 1000
+
+
+def validate_path_within_root(path: str, root: str, description: str) -> Path:
+    """Validate that a path is within the expected root directory."""
+    resolved_path = Path(path).resolve()
+    resolved_root = Path(root).resolve()
+
+    # Use is_relative_to for proper path containment check
+    # This prevents bypasses like /media/root_evil matching /media/root
+    if not resolved_path.is_relative_to(resolved_root):
+        raise DownloadError(
+            f"{description} path traversal detected: {path} is outside {root}",
+            retryable=False,
+        )
+    return resolved_path
+
+
+def validate_url(url: str) -> None:
+    """Validate URL scheme is http or https."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise DownloadError(
+            f"Invalid URL scheme: {parsed.scheme}. Only http and https are allowed.",
+            retryable=False,
+        )
+
+
+def validate_proxy_url(proxy: str) -> None:
+    """Validate proxy URL format."""
+    parsed = urlparse(proxy)
+    if parsed.scheme not in ("http", "https", "socks4", "socks5"):
+        raise DownloadError(
+            f"Invalid proxy scheme: {parsed.scheme}. Allowed: http, https, socks4, socks5.",
+            retryable=False,
+        )
+
+
+def validate_format_preset(preset: str) -> str:
+    """Validate format preset against allowed values."""
+    allowed = {e.value for e in FormatPreset}
+    if preset not in allowed:
+        logger.warning("Unknown format preset, using default", preset=preset, allowed=list(allowed))
+        return FormatPreset.BESTVIDEO_BESTAUDIO.value
+    return preset
+
+
+def validate_output_container(container: str) -> str:
+    """Validate output container against allowed values."""
+    allowed = {e.value for e in OutputContainer}
+    if container not in allowed:
+        logger.warning("Unknown output container, using default", container=container, allowed=list(allowed))
+        return OutputContainer.MKV.value
+    return container
 
 
 def sanitize_filename(name: str, max_length: int = 200) -> str:
@@ -113,6 +170,17 @@ class VideoDownloader:
         self._yt_logger = YtDlpLogger(self.event_publisher, job.job_id)
         log = logger.bind(job_id=job.job_id, url=job.url)
 
+        # Validate URL scheme
+        validate_url(job.url)
+
+        # Validate paths are within MEDIA_ROOT
+        validate_path_within_root(job.temp_dir, config.media_root, "temp_dir")
+        validate_path_within_root(job.final_path, config.media_root, "final_path")
+
+        # Validate format preset and output container
+        validated_format = validate_format_preset(job.format_preset)
+        validated_container = validate_output_container(job.output_container)
+
         # Create temp directory
         temp_dir = Path(job.temp_dir)
         temp_dir.mkdir(parents=True, exist_ok=True)
@@ -120,10 +188,10 @@ class VideoDownloader:
         # Build output template
         output_template = str(temp_dir / "%(id)s.%(ext)s")
 
-        # Build yt-dlp options
-        ydl_opts = self._build_options(job, output_template, self._yt_logger)
+        # Build yt-dlp options (use validated values)
+        ydl_opts = self._build_options(job, output_template, self._yt_logger, validated_format)
 
-        log.info("Starting download", format=job.format_preset)
+        log.info("Starting download", format=validated_format)
         self.event_publisher.publish_log(job.job_id, "info", f"Starting download: {job.url}")
 
         try:
@@ -135,7 +203,9 @@ class VideoDownloader:
                 if info is None:
                     raise DownloadError("Failed to extract video info")
 
-                time.sleep(4)
+                # Brief delay between info extraction and download to avoid rate limiting
+                # Some extractors benefit from this pause to allow session handling
+                time.sleep(2)
 
                 # Download the video
                 log.info("Downloading video", title=info.get("title"))
@@ -154,18 +224,22 @@ class VideoDownloader:
                 if not job.requested_dubbing:
                     # Generate proper filename: "Title [source_id].ext"
                     title = sanitize_filename(metadata.source_title or "untitled")
-                    source_id = metadata.source_id or job.job_id
-                    ext = job.output_container
+                    source_id = sanitize_filename(metadata.source_id or job.job_id)
+                    ext = validated_container
                     filename = f"{title} [{source_id}].{ext}"
 
                     final_dir = Path(job.final_path).parent
                     final_dir.mkdir(parents=True, exist_ok=True)
                     final_path = final_dir / filename
 
-                    # Handle duplicate filenames
+                    # Handle duplicate filenames with bounded loop
                     counter = 1
-                    base_final_path = final_path
                     while final_path.exists():
+                        if counter > MAX_DUPLICATE_ATTEMPTS:
+                            raise DownloadError(
+                                f"Too many duplicate files: exceeded {MAX_DUPLICATE_ATTEMPTS} attempts",
+                                retryable=False,
+                            )
                         filename = f"{title} [{source_id}] ({counter}).{ext}"
                         final_path = final_dir / filename
                         counter += 1
@@ -199,7 +273,9 @@ class VideoDownloader:
             self._current_job_id = None
             self._yt_logger = None
 
-    def _build_options(self, job: DownloadJobData, output_template: str, yt_logger: YtDlpLogger) -> dict[str, Any]:
+    def _build_options(
+        self, job: DownloadJobData, output_template: str, yt_logger: YtDlpLogger, validated_format: str
+    ) -> dict[str, Any]:
         """Build yt-dlp options dictionary."""
         opts: dict[str, Any] = {
             "outtmpl": output_template,
@@ -224,11 +300,12 @@ class VideoDownloader:
         # - Live streams (uses prefer_best)
         # - Missing ffmpeg (falls back to single file)
         # - Multiple audio streams compat mode
-        if job.format_preset and job.format_preset != "bestvideo+bestaudio":
-            opts["format"] = job.format_preset
+        if validated_format and validated_format != "bestvideo+bestaudio":
+            opts["format"] = validated_format
 
         # Format sorting preferences - prefer h264/aac for better mp4 compatibility
-        opts["format_sort"] = ["vcodec:h264", "lang", "quality", "res", "fps", "hdr:12", "acodec:aac"]
+        # Note: 'hdr' without suffix prefers HDR content when available
+        opts["format_sort"] = ["vcodec:h264", "lang", "quality", "res", "fps", "hdr", "acodec:aac"]
 
         # Add subtitles if requested
         if job.download_subtitles:
@@ -236,14 +313,21 @@ class VideoDownloader:
             opts["subtitleslangs"] = ["en", "ru", "all"]
             opts["subtitlesformat"] = "best"
 
-        # Add proxy if configured
+        # Add proxy if configured (with validation)
         proxy = job.proxy or config.proxy
         if proxy:
+            validate_proxy_url(proxy)
             opts["proxy"] = proxy
 
         # Add cookies if provided in job and file has actual cookie data
-        if job.cookies_file and os.path.exists(job.cookies_file) and self._has_valid_cookies(job.cookies_file):
-            opts["cookiefile"] = job.cookies_file
+        # Validate cookies_file path is within allowed directories
+        if job.cookies_file:
+            try:
+                validate_path_within_root(job.cookies_file, config.media_root, "cookies_file")
+                if os.path.exists(job.cookies_file) and self._has_valid_cookies(job.cookies_file):
+                    opts["cookiefile"] = job.cookies_file
+            except DownloadError:
+                logger.warning("Cookies file path outside media root, ignoring", path=job.cookies_file)
 
         # Add rate limit if configured
         rate_limit = job.rate_limit or config.rate_limit

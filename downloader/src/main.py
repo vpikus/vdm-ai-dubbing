@@ -1,10 +1,15 @@
 """Main entry point for Download Worker."""
 
 import json
+import logging
+import os
+import re
 import signal
 import sys
+import threading
 import time
 import traceback
+from pathlib import Path
 from typing import Any
 
 import redis
@@ -12,7 +17,7 @@ import structlog
 
 from .config import config
 from .downloader import DownloadError, VideoDownloader, sanitize_filename
-from .events import EventPublisher, create_event_publisher
+from .events import EventPublisher
 from .types import DownloadJobData, JobStatus, MediaMetadata
 
 # Configure structlog for PrintLogger (no stdlib processors)
@@ -25,7 +30,7 @@ structlog.configure(
         structlog.processors.UnicodeDecoder(),
         structlog.processors.JSONRenderer(),
     ],
-    wrapper_class=structlog.make_filtering_bound_logger(0),  # Accept all log levels
+    wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
     context_class=dict,
     logger_factory=structlog.PrintLoggerFactory(),
     cache_logger_on_first_use=True,
@@ -33,15 +38,14 @@ structlog.configure(
 
 logger = structlog.get_logger("downloader")
 
-# Global shutdown flag
-shutdown_requested = False
+# Thread-safe shutdown event
+shutdown_event = threading.Event()
 
 
 def signal_handler(signum: int, frame: Any) -> None:
     """Handle shutdown signals."""
-    global shutdown_requested
     logger.info("Shutdown signal received", signal=signum)
-    shutdown_requested = True
+    shutdown_event.set()
 
 
 def parse_job_data(data: dict[str, Any]) -> DownloadJobData:
@@ -67,8 +71,6 @@ def enqueue_bullmq_job(
     redis_client: redis.Redis, queue_name: str, job_data: dict[str, Any], job_name: str = "default"
 ) -> str:
     """Enqueue a job using BullMQ-compatible format."""
-    import time
-
     # Get next job ID (BullMQ uses incrementing IDs)
     bull_job_id = redis_client.incr(f"bull:{queue_name}:id")
 
@@ -99,9 +101,8 @@ def enqueue_dub_job(
 ) -> None:
     """Enqueue a dubbing job after successful download."""
     # Generate final path with proper filename: "Title [source_id].ext"
-    from pathlib import Path
     title = sanitize_filename(metadata.source_title or "untitled")
-    source_id = metadata.source_id or job.job_id
+    source_id = sanitize_filename(metadata.source_id or job.job_id)
     ext = job.output_container
     filename = f"{title} [{source_id}].{ext}"
     final_dir = Path(job.final_path).parent
@@ -150,7 +151,6 @@ def process_job(
         )
 
         # Publish metadata
-        import os
         file_size = os.path.getsize(video_path) if os.path.exists(video_path) else None
         event_publisher.publish_metadata(
             job_id=job.job_id,
@@ -233,7 +233,7 @@ def consume_jobs(
 
     logger.info("Starting job consumer", queue=queue_key)
 
-    while not shutdown_requested:
+    while not shutdown_event.is_set():
         try:
             # Block for 5 seconds waiting for a job
             result = redis_client.blpop(queue_key, timeout=5)
@@ -262,11 +262,17 @@ def consume_jobs(
             time.sleep(1)
 
 
+def redact_redis_url(url: str) -> str:
+    """Redact password from Redis URL for safe logging."""
+    # Pattern: redis[s]://[username:]password@host:port (handles both redis:// and rediss://)
+    return re.sub(r"(rediss?://[^:]*:)[^@]+(@)", r"\1***\2", url)
+
+
 def main() -> None:
     """Main entry point."""
     logger.info(
         "Starting Download Worker",
-        redis_url=config.redis_url,
+        redis_url=redact_redis_url(config.redis_url),
         media_root=config.media_root,
     )
 
@@ -275,11 +281,12 @@ def main() -> None:
     signal.signal(signal.SIGINT, signal_handler)
 
     # Connect to Redis
+    redis_client: redis.Redis | None = None
     try:
         redis_client = redis.Redis.from_url(config.redis_url)
         redis_client.ping()
         logger.info("Connected to Redis")
-    except redis.exceptions.ConnectionError as e:
+    except (redis.exceptions.ConnectionError, redis.exceptions.RedisError) as e:
         logger.error("Failed to connect to Redis", error=str(e))
         sys.exit(1)
 
@@ -293,7 +300,8 @@ def main() -> None:
     except KeyboardInterrupt:
         logger.info("Interrupted by user")
     finally:
-        redis_client.close()
+        if redis_client is not None:
+            redis_client.close()
         logger.info("Download Worker stopped")
 
 

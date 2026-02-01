@@ -5,10 +5,9 @@ A Transmission-like video download manager with optional AI dubbing support. Bui
 ## Features
 
 - Download videos from YouTube and other supported sites (via yt-dlp)
-- Optional AI voice-over dubbing (via Yandex VOT)
+- Optional AI voice-over dubbing (via Yandex VOT) - supports Russian, English, Kazakh
 - Real-time progress updates via WebSocket
 - Queue-based job processing with BullMQ
-- Multi-language dubbing support
 - Web UI for managing downloads
 
 ## Architecture
@@ -122,19 +121,12 @@ See `.env.example` for all configuration options.
 | `DUCKING_LEVEL` | `0.3` | Original audio reduction during voice-over |
 | `DUBBING_CONCURRENCY` | `2` | Concurrent dubbing jobs |
 
-## Supported Languages
+## Supported Dubbing Languages
 
-For dubbing, the following languages are supported:
+VOT.js (Yandex Voice-Over Translation) supports the following target languages:
 - Russian (ru)
 - English (en)
-- Chinese (zh)
-- Korean (ko)
-- Japanese (ja)
-- German (de)
-- French (fr)
-- Spanish (es)
-- Italian (it)
-- Portuguese (pt)
+- Kazakh (kk)
 
 ## License
 

@@ -46,17 +46,11 @@ const containerOptions = [
   { value: 'webm', label: 'WebM' },
 ];
 
+// VOT.js (Yandex Voice-Over Translation) only supports these languages
 const languageOptions = [
   { value: 'ru', label: 'Russian' },
   { value: 'en', label: 'English' },
-  { value: 'zh', label: 'Chinese' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'de', label: 'German' },
-  { value: 'fr', label: 'French' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'it', label: 'Italian' },
-  { value: 'pt', label: 'Portuguese' },
+  { value: 'kk', label: 'Kazakh' },
 ];
 
 export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {
@@ -189,7 +183,7 @@ export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {
                 >
                   <Input.TextArea
                     rows={4}
-                    placeholder="# Netscape HTTP Cookie File&#10;.youtube.com&#9;TRUE&#9;/&#9;FALSE&#9;0&#9;cookie_name&#9;cookie_value"
+                    placeholder={"# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tFALSE\t0\tcookie_name\tcookie_value"}
                     style={{ fontFamily: 'monospace', fontSize: 12 }}
                   />
                 </Form.Item>

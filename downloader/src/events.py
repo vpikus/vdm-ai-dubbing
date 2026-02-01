@@ -6,7 +6,6 @@ from typing import Any
 import redis
 import structlog
 
-from .config import config
 from .types import EventMessage
 
 logger = structlog.get_logger(__name__)
@@ -153,9 +152,3 @@ class EventPublisher:
 
         message = EventMessage.create(job_id, "metadata", payload)
         self.publish("events:metadata", message)
-
-
-def create_event_publisher() -> EventPublisher:
-    """Create an event publisher with Redis connection."""
-    redis_client = redis.Redis.from_url(config.redis_url)
-    return EventPublisher(redis_client)

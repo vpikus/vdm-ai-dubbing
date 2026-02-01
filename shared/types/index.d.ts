@@ -17,6 +17,7 @@ export interface Job {
     completedAt?: Date;
     requestedDubbing: boolean;
     targetLang: string;
+    useLivelyVoice: boolean;
     formatPreset: FormatPreset;
     outputContainer: OutputContainer;
     downloadSubtitles: boolean;
@@ -30,10 +31,12 @@ export interface CreateJobRequest {
     url: string;
     requestedDubbing?: boolean;
     targetLang?: string;
+    useLivelyVoice?: boolean;
     formatPreset?: FormatPreset;
     outputContainer?: OutputContainer;
     downloadSubtitles?: boolean;
     priority?: number;
+    cookies?: string;
 }
 /** Job control actions */
 export type JobControlAction = 'pause' | 'resume' | 'cancel' | 'prioritize';
@@ -78,8 +81,12 @@ export interface Media {
     sourceDescription?: string;
     sourceThumbnailUrl?: string;
 }
-/** Event types for job_events table */
-export type EventType = 'progress' | 'state_change' | 'log' | 'error' | 'started' | 'finished' | 'retry';
+/**
+ * Event types for Pub/Sub messages.
+ * Note: 'metadata' is used only for Pub/Sub, not stored in job_events table.
+ * DB-stored event types: progress, state_change, log, error, started, finished, retry
+ */
+export type EventType = 'progress' | 'state_change' | 'log' | 'error' | 'started' | 'finished' | 'retry' | 'metadata';
 /** Job event record from database */
 export interface JobEvent {
     id: number;
@@ -115,9 +122,9 @@ export interface ErrorPayload {
     stack?: string;
 }
 /** Queue names */
-export type QueueName = 'q:download' | 'q:dub' | 'q:mux';
+export type QueueName = 'download' | 'dub' | 'mux';
 /** Pub/Sub channel names */
-export type EventChannel = 'events:progress' | 'events:state' | 'events:log' | 'events:error';
+export type EventChannel = 'events:progress' | 'events:state' | 'events:log' | 'events:error' | 'events:metadata';
 /** Base event message for Pub/Sub */
 export interface EventMessage<T = unknown> {
     jobId: string;
@@ -133,6 +140,7 @@ export interface DownloadJobData {
     outputContainer: OutputContainer;
     requestedDubbing: boolean;
     targetLang: string;
+    useLivelyVoice: boolean;
     downloadSubtitles: boolean;
     tempDir: string;
     finalPath: string;
@@ -143,10 +151,14 @@ export interface DownloadJobData {
 /** Dubbing job data for q:dub */
 export interface DubJobData {
     jobId: string;
+    url: string;
     videoPath: string;
     targetLang: string;
+    useLivelyVoice: boolean;
     tempDir: string;
     outputPath: string;
+    finalPath: string;
+    outputContainer: OutputContainer;
 }
 /** Muxing job data for q:mux */
 export interface MuxJobData {

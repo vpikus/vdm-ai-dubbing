@@ -46,17 +46,11 @@ const containerOptions = [
   { value: 'webm', label: 'WebM' },
 ];
 
+// VOT.js (Yandex Voice-Over Translation) only supports these languages
 const languageOptions = [
   { value: 'ru', label: 'Russian' },
   { value: 'en', label: 'English' },
-  { value: 'zh', label: 'Chinese' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'de', label: 'German' },
-  { value: 'fr', label: 'French' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'it', label: 'Italian' },
-  { value: 'pt', label: 'Portuguese' },
+  { value: 'kk', label: 'Kazakh' },
 ];
 
 export function AddJobDialog({ isOpen, onClose }: AddJobDialogProps) {

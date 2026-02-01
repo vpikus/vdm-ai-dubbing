@@ -30,9 +30,15 @@ class AudioMuxer:
             "-select_streams", "a",
             video_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, check=True)
-        data = json.loads(result.stdout)
-        return len(data.get("streams", [])) > 0
+        try:
+            result = subprocess.run(cmd, capture_output=True, check=True)
+            data = json.loads(result.stdout)
+            return len(data.get("streams", [])) > 0
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise MuxingError(f"Failed to probe video file: {error_msg}")
+        except json.JSONDecodeError as e:
+            raise MuxingError(f"Failed to parse ffprobe output: {e}")
 
     def process(self, job: MuxJobData) -> str:
         """

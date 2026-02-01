@@ -26,7 +26,9 @@ def validate_path_within_root(path: str, root: str, description: str) -> Path:
     resolved_path = Path(path).resolve()
     resolved_root = Path(root).resolve()
 
-    if not str(resolved_path).startswith(str(resolved_root)):
+    # Use is_relative_to for proper path containment check
+    # This prevents bypasses like /media/root_evil matching /media/root
+    if not resolved_path.is_relative_to(resolved_root):
         raise DownloadError(
             f"{description} path traversal detected: {path} is outside {root}",
             retryable=False,

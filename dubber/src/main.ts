@@ -5,9 +5,9 @@ import { performDubbing } from './dubber.js';
 import { publishStateChange, publishLog, publishError, closeRedis, getRedis } from './events.js';
 import type { DubJobData, MuxJobData } from './types.js';
 
-// Redact password from Redis URL for safe logging
+// Redact password from Redis URL for safe logging (handles redis:// and rediss://)
 function redactRedisUrl(url: string): string {
-  return url.replace(/(redis:\/\/[^:]*:)[^@]+(@)/, '$1***$2');
+  return url.replace(/(rediss?:\/\/[^:]*:)[^@]+(@)/, '$1***$2');
 }
 
 console.log('Starting Dubbing Worker...');

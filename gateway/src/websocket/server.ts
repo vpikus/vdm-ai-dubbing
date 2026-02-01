@@ -96,7 +96,11 @@ export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
     // Handle authentication
     socket.on('authenticate', (token: string) => {
       try {
-        jwt.verify(token, config.jwtSecret);
+        const payload = jwt.verify(token, config.jwtSecret);
+        // Validate JWT payload has required fields
+        if (typeof payload !== 'object' || payload === null || !('sub' in payload)) {
+          throw new Error('Invalid token payload');
+        }
         authenticatedSockets.add(socket.id);
         socket.emit('authenticated', { success: true });
         console.log(`Socket ${socket.id} authenticated`);

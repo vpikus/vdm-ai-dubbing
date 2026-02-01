@@ -168,6 +168,11 @@ class SocketClient {
         this.subscribedJobs.delete(jobId);
         this.socket?.emit('unsubscribe', [jobId]);
       }
+      // Also remove from pending subscriptions to prevent resubscription after auth
+      const pendingIndex = this.pendingSubscriptions.indexOf(jobId);
+      if (pendingIndex !== -1) {
+        this.pendingSubscriptions.splice(pendingIndex, 1);
+      }
     } else {
       // Still have other subscribers - just decrement count
       this.subscriptionCounts.set(jobId, currentCount - 1);

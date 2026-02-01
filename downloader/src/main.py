@@ -264,8 +264,8 @@ def consume_jobs(
 
 def redact_redis_url(url: str) -> str:
     """Redact password from Redis URL for safe logging."""
-    # Pattern: redis://[:password@]host:port
-    return re.sub(r"(redis://[^:]*:)[^@]+(@)", r"\1***\2", url)
+    # Pattern: redis[s]://[username:]password@host:port (handles both redis:// and rediss://)
+    return re.sub(r"(rediss?://[^:]*:)[^@]+(@)", r"\1***\2", url)
 
 
 def main() -> None:

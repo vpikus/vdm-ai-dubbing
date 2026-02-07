@@ -1,50 +1,38 @@
-import { Layout, Button, Typography, Space } from 'antd';
-import { PlusOutlined, CloudDownloadOutlined } from '@ant-design/icons';
-import { useAuthStore } from '../store/authStore';
+import { Layout, Button, Typography, Flex } from 'antd';
+import { CloudDownloadOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 interface HeaderProps {
-  onAddJob: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
-export function Header({ onAddJob }: HeaderProps) {
-  const { user, logout } = useAuthStore();
-
+export function Header({ collapsed, onToggleCollapsed }: HeaderProps) {
   return (
     <Layout.Header
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         padding: '0 24px',
         borderBottom: '1px solid #374151',
       }}
     >
-      <Space>
-        <CloudDownloadOutlined style={{ fontSize: 28, color: '#6366f1' }} />
-        <Title level={4} style={{ margin: 0 }}>
-          Video Download Manager
-        </Title>
-      </Space>
+      <Flex align="center" justify="space-between" style={{ height: '100%' }}>
+        <Flex align="center" gap="small">
+          <CloudDownloadOutlined style={{ fontSize: 28, color: '#6366f1' }} />
+          <Title level={4} style={{ margin: 0 }}>
+            Video Download Manager
+          </Title>
+        </Flex>
 
-      <Space size="middle">
-        <Button type="primary" icon={<PlusOutlined />} onClick={onAddJob}>
-          Add Download
-        </Button>
-
-        {user && (
-          <Space>
-            <Text type="secondary">{user.username}</Text>
-            <Button type="text" onClick={logout}>
-              Logout
-            </Button>
-          </Space>
-        )}
-      </Space>
+        <Button
+          type="default"
+          onClick={onToggleCollapsed}
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        />
+      </Flex>
     </Layout.Header>
   );
 }

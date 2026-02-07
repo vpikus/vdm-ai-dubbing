@@ -26,7 +26,8 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY src ./src
 
-RUN pip install --no-cache-dir . && \
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir . && \
     # Install yt-dlp nightly/pre-release for latest fixes
     pip install -U --pre "yt-dlp[default]" && \
     pip cache purge

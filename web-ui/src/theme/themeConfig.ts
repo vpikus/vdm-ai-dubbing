@@ -35,6 +35,11 @@ const themeConfig: ThemeConfig = {
     Layout: {
       headerBg: '#1f2937',
       bodyBg: '#111827',
+      siderBg: '#1f2937',
+    },
+    Menu: {
+      darkItemBg: '#1f2937',
+      darkSubMenuItemBg: '#1f2937',
     },
     Notification: {
       colorBgElevated: '#1f2937',

@@ -2,11 +2,11 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     """Job status values."""
 
     QUEUED = "QUEUED"
@@ -20,7 +20,7 @@ class JobStatus(str, Enum):
     CANCELED = "CANCELED"
 
 
-class FormatPreset(str, Enum):
+class FormatPreset(StrEnum):
     """Format preset values for yt-dlp."""
 
     BESTVIDEO_BESTAUDIO = "bestvideo+bestaudio"
@@ -29,7 +29,7 @@ class FormatPreset(str, Enum):
     WORST = "worst"
 
 
-class OutputContainer(str, Enum):
+class OutputContainer(StrEnum):
     """Output container formats."""
 
     MKV = "mkv"

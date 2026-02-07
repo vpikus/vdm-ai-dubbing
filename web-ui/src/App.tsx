@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout, Typography, Badge, Menu, Flex } from 'antd';
+import { Layout, Menu } from 'antd';
 import { UserOutlined, LogoutOutlined, PlusOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useAuthStore } from './store/authStore';
@@ -9,7 +9,6 @@ import type { Job } from './types';
 import { socketClient } from './services/socket';
 
 const { Content, Sider } = Layout;
-const { Title } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -89,13 +88,6 @@ function App() {
             overflow: 'auto',
           }}
         >
-          <Flex justify="space-between" align="center" style={{ marginBottom: 24 }}>
-            <Title level={4} style={{ margin: 0 }}>
-              Downloads
-            </Title>
-            <Badge status="success" text="Connected" />
-          </Flex>
-
           <JobList onSelectJob={handleSelectJob} />
         </Content>
 
